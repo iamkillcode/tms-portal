@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tender Number Generator</title>
+</head>
+<body>
+    <h1>Tender Number Generator</h1>
+
+    {% if tender_number %}
+        <p><strong>Generated Tender Number:</strong> {{ tender_number }}</p>
+    {% endif %}
+
+    {% if error %}
+        <p style="color: red;">Error: {{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <label for="department_code">Department Code:</label>
+        <select id="department_code" name="department_code" required>
+            {% for code in department_codes %}
+                <option value="{{ code }}">{{ code }}</option>
+            {% endfor %}
+        </select>
+<br>
+
+        <label for="category_code">Category Code:</label>
+        <input type="text" id="category_code" name="category_code" placeholder="e.g., A.4.1" required><br>
+
+        <label for="procurement_type">Procurement Type:</label>
+        <input type="text" id="procurement_type" name="procurement_type" placeholder="e.g., SIS" required><br>
+
+        <button type="submit">Generate</button>
+    </form>
+</body>
+</html>

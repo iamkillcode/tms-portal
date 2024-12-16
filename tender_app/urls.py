@@ -1,7 +1,6 @@
 from django.urls import path
-
-from .views import home_page_view
+from . import views  # Import the views from app
 
 urlpatterns = [
-    path("", home_page_view),
+    path('tender-generator/', views.tender_generator_view, name='tender_generator'),
 ]
