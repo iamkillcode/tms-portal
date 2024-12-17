@@ -4,35 +4,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tender Number Generator</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #2c3e50;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Feedback Messages */
+        .success-message, .error-message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .success-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* Form Styling */
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, select, textarea {
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            resize: vertical; /* Allows resizing of textarea */
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            font-size: 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
 <body>
     <h1>Tender Number Generator</h1>
 
-    {% if tender_number %}
-        <p><strong>Generated Tender Number:</strong> {{ tender_number }}</p>
-    {% endif %}
+    <div class="container">
+        {% if tender_number %}
+            <p class="success-message"><strong>Generated Tender Number:</strong> {{ tender_number }}</p>
+        {% endif %}
 
-    {% if error %}
-        <p style="color: red;">Error: {{ error }}</p>
-    {% endif %}
+        {% if tender_description %}
+            <p><strong>Tender Topic/Description:</strong> {{ tender_description }} {{ tender_number }}</p>
+        {% endif %}
 
-    <form method="POST">
-        {% csrf_token %}
-        <label for="department_code">Department Code:</label>
-        <select id="department_code" name="department_code" required>
-            {% for code in department_codes %}
-                <option value="{{ code }}">{{ code }}</option>
-            {% endfor %}
-        </select>
-<br>
+        {% if error %}
+            <p class="error-message">Error: {{ error }}</p>
+        {% endif %}
 
-        <label for="category_code">Category Code:</label>
-        <input type="text" id="category_code" name="category_code" placeholder="e.g., A.4.1" required><br>
+        <form method="POST">
+            {% csrf_token %}
+            <label for="department_code">Department Code:</label>
+            <select id="department_code" name="department_code" required>
+                {% for code in department_codes %}
+                    <option value="{{ code }}">{{ code }}</option>
+                {% endfor %}
+            </select>
 
-        <label for="procurement_type">Procurement Type:</label>
-        <input type="text" id="procurement_type" name="procurement_type" placeholder="e.g., SIS" required><br>
+            <!-- New tender description field -->
+            <label for="tender_description">Tender Topic/Description:</label>
+            <textarea id="tender_description" name="tender_description" rows="4" placeholder="Provide a brief description of the tender topic" required></textarea>
 
-        <button type="submit">Generate</button>
-    </form>
+            <label for="category_code">Category Code:</label>
+            <input type="text" id="category_code" name="category_code" placeholder="e.g., A.4.1" required>
+
+            <label for="procurement_type">Procurement Type:</label>
+            <input type="text" id="procurement_type" name="procurement_type" placeholder="e.g., SIS" required>
+
+            <button type="submit">Generate</button>
+        </form>
+    </div>
 </body>
 </html>

@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-sg4h!aup76h7^=ne+8b5!#c!+*s**cmon0vw0gv*o+ufp144&3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.90.91']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -69,6 +70,12 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'tender.wsgi.application'
+
+
+LOGIN_URL = '/login/'  # Replace with your actual login URL
+LOGIN_REDIRECT_URL = '/tender-generator/'  # Where to redirect after login
+LOGOUT_REDIRECT_URL = '/login/'  # Redirect here after logout
+
 
 
 # Database
