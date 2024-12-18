@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from datetime import datetime
+import pandas as pd
+from django.http import JsonResponse
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from .models import TenderTracker, Department
-from .forms import RegisterForm
+from .models import TenderTracker, Department, Category
+from .forms import CustomUserCreationForm
 
 # Tender number generator view
 @login_required
@@ -43,28 +45,32 @@ def tender_generator_view(request):
 
     # Fetch department codes for the dropdown
     department_codes = Department.objects.values_list('code', flat=True)
+    categories = Category.objects.all()
+    category_data = [{"id": category.code, "text": category.name} for category in categories]
 
     return render(request, "tender_generator.html", {
         "tender_number": tender_number,
         "error": error,
         "department_codes": department_codes,
-        "tender_description": tender_description  # Pass the description to the template
+        "tender_description": tender_description,  # Pass the description to the template
+        "category_data": category_data,
     })
 
 # Register view
 def register_view(request):
     if request.method == 'POST':
-        form = RegisterForm(request.POST)
+        form = CustomUserCreationForm(request.POST)  # Use the updated form
         if form.is_valid():
             form.save()
             username = form.cleaned_data.get('username')
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(request, user)
-            return redirect('tender_generator')  # Redirect to a 'home' page after successful registration
+            return redirect('tender_generator')  # Redirect to tender generator after registration
     else:
-        form = RegisterForm()
+        form = CustomUserCreationForm()
     return render(request, 'register.html', {'form': form})
+
 
 # Login view
 def login_view(request):
@@ -81,3 +87,15 @@ def login_view(request):
 # Home view (after login)
 def home_view(request):
     return render(request, 'home.html')  # Create this template for your homepage
+
+ 
+
+# def tender_number_generator(request):
+#     # Load category data from Excel file
+#     df = pd.read_excel('./src/static/categorylist.xlsx')
+#     category_data = [{"id": row['Category Code'], "text": row['Category Name']} for index, row in df.iterrows()]
+    
+#     return render(request, 'tender_generator.html', {
+#         'category_data': category_data,
+#     })
+
