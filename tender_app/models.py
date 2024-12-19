@@ -1,10 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
+# Tracks the sequence of tender numbers for each year
 class TenderTracker(models.Model):
     year = models.IntegerField(unique=True)  # Ensures one entry per year
-    last_sequence = models.IntegerField(default=0)  # sequence counter
+    last_sequence = models.IntegerField(default=0)  # Sequence counter
 
     def __str__(self):
         return f"{self.year} - {self.last_sequence}"
@@ -17,6 +17,7 @@ class TenderTracker(models.Model):
         return tracker.last_sequence
 
 
+# Represents a department in the system
 class Department(models.Model):
     code = models.CharField(max_length=10, unique=True)
     name = models.CharField(max_length=100)
@@ -25,27 +26,52 @@ class Department(models.Model):
         return f"{self.code} - {self.name}"
 
 
+# Represents a category, e.g., A.4.1
+class Category(models.Model):
+    code = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+# Represents an individual tender
 class Tender(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # Link to registered users
     tender_number = models.CharField(max_length=50, unique=True)
     description = models.TextField()
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)  # Track department
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='Pending'
+    )
 
     def __str__(self):
         return f"{self.tender_number} by {self.user.username}"
 
+
+# Tracks user profiles for extended user details
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     full_name = models.CharField(max_length=150)
 
     def __str__(self):
         return self.full_name
-from django.db import models
 
-class Category(models.Model):
-    code = models.CharField(max_length=10, unique=True)  # e.g., A.4.1
-    name = models.CharField(max_length=255)  # e.g., Category Name
+
+# Tracks activity logs related to tenders
+class ActivityLog(models.Model):
+    date = models.DateTimeField(auto_now_add=True)
+    officer = models.ForeignKey(User, on_delete=models.CASCADE)
+    activity_description = models.TextField()
+    tender = models.ForeignKey(Tender, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return f"{self.date} - {self.officer.username} - {self.tender.tender_number}"

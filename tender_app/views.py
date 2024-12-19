@@ -89,13 +89,3 @@ def home_view(request):
     return render(request, 'home.html')  # Create this template for your homepage
 
  
-
-# def tender_number_generator(request):
-#     # Load category data from Excel file
-#     df = pd.read_excel('./src/static/categorylist.xlsx')
-#     category_data = [{"id": row['Category Code'], "text": row['Category Name']} for index, row in df.iterrows()]
-    
-#     return render(request, 'tender_generator.html', {
-#         'category_data': category_data,
-#     })
-
