@@ -3,6 +3,7 @@ from .models import TenderTracker, Department, Tender, ActivityLog
 import csv
 from django.http import HttpResponse
 from openpyxl import Workbook
+from django.utils.timezone import localtime
 
 
 @admin.register(TenderTracker)
@@ -31,6 +32,50 @@ class ActivityLogAdmin(admin.ModelAdmin):
     list_display = ('date', 'officer', 'activity_description', 'tender')
     search_fields = ('officer__username', 'activity_description', 'tender__tender_number')
     list_filter = ('date', 'officer', 'tender')
+    actions = ['export_to_csv', 'export_to_excel']
+
+    # Custom action to export selected activity logs to CSV
+    def export_to_csv(self, request, queryset):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="activity_logs.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Officer', 'Activity Description', 'Tender'])
+        for log in queryset:
+            writer.writerow([
+                log.date,
+                log.officer.username,
+                log.activity_description,
+                log.tender.tender_number,
+            ])
+        return response
+    export_to_csv.short_description = "Export selected activity logs to CSV"
+
+    # Custom action to export selected activity logs to Excel
+    def export_to_excel(self, request, queryset):
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="activity_logs.xlsx"'
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Activity Logs"
+
+        # Write header
+        headers = ['Date', 'Officer', 'Activity Description', 'Tender']
+        ws.append(headers)
+
+        # Write data
+        for log in queryset:
+            ws.append([
+                log.date,
+                log.officer.username,
+                log.activity_description,
+                log.tender.tender_number,
+            ])
+
+        wb.save(response)
+        return response
+    export_to_excel.short_description = "Export selected activity logs to Excel"
     
 @admin.register(Tender)
 class TenderAdmin(admin.ModelAdmin):
@@ -80,12 +125,13 @@ class TenderAdmin(admin.ModelAdmin):
 
         # Write data
         for tender in queryset:
+            created_at_naive = localtime(tender.created_at).replace(tzinfo=None)
             ws.append([
                 tender.tender_number,
                 tender.user.username,
                 tender.description,
                 tender.department.name if tender.department else '',
-                tender.created_at,
+                created_at_naive,
                 tender.status,
             ])
 

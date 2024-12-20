@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from .models import TenderTracker, Department, Category
+from .models import TenderTracker, Department, Category, Tender, ActivityLog
 from .forms import CustomUserCreationForm
 
 # Tender number generator view
@@ -39,6 +39,23 @@ def tender_generator_view(request):
             # Generate the tender number
             sequential_number = f"{tracker.last_sequence:04}"  # Zero-padded to 4 digits
             tender_number = f"{prefix}/{department_code}/{year}/{category_code}/{procurement_type}-{sequential_number}"
+
+            # Save the tender details in the database
+            department = Department.objects.get(code=department_code)
+            tender = Tender.objects.create(
+                user=request.user,
+                tender_number=tender_number,
+                description=tender_description,
+                department=department,
+                status='Pending'
+            )
+
+            # Create an activity log entry
+            ActivityLog.objects.create(
+                officer=request.user,
+                activity_description=f"Generated tender number {tender_number}",
+                tender=tender
+            )
 
         except Exception as e:
             error = str(e)
