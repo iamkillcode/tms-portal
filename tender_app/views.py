@@ -22,6 +22,8 @@ def tender_generator_view(request):
             category_code = request.POST.get("category_code")
             procurement_type = request.POST.get("procurement_type")
             tender_description = request.POST.get("tender_description")  # Get the description field
+            amendment = request.POST.get("amendment")  # Get the amendment field
+            call_off = request.POST.get("call_off")  # Get the call-off field
 
             prefix = "FDA"
             year = datetime.now().year
@@ -39,6 +41,10 @@ def tender_generator_view(request):
             # Generate the tender number
             sequential_number = f"{tracker.last_sequence:04}"  # Zero-padded to 4 digits
             tender_number = f"{prefix}/{department_code}/{year}/{category_code}/{procurement_type}-{sequential_number}"
+            if amendment:
+                tender_number += f" ({amendment})"
+            if call_off:
+                tender_number += f" ({call_off})"
 
             # Save the tender details in the database
             department = Department.objects.get(code=department_code)
@@ -47,13 +53,15 @@ def tender_generator_view(request):
                 tender_number=tender_number,
                 description=tender_description,
                 department=department,
-                status='Pending'
+                status='Pending',
+                amendment=amendment,
+                call_off=call_off
             )
 
             # Create an activity log entry
             ActivityLog.objects.create(
                 officer=request.user,
-                activity_description=f"Generated tender number {tender_number}",
+                activity_description=f"{tender_description}",
                 tender=tender
             )
 
@@ -104,5 +112,3 @@ def login_view(request):
 # Home view (after login)
 def home_view(request):
     return render(request, 'home.html')  # Create this template for your homepage
-
- 

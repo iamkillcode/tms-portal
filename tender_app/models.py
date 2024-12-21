@@ -39,7 +39,8 @@ class Category(models.Model):
 class Tender(models.Model):
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
-        ('Approved', 'Approved'),
+        ('In Progress', 'In Progress'),
+        ('Completed', 'Completed'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # Link to registered users
@@ -52,6 +53,8 @@ class Tender(models.Model):
         choices=STATUS_CHOICES,
         default='Pending'
     )
+    amendment = models.CharField(max_length=10, blank=True, null=True)  # Optional amendment field
+    call_off = models.CharField(max_length=10, blank=True, null=True)  # Optional call-off field
 
     def __str__(self):
         return f"{self.tender_number} by {self.user.username}"
