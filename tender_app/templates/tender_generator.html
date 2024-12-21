@@ -3,190 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tender Number Generator</title>
+    <!-- Include Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <!-- Include Select2 CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet">
     <!-- Include jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
     <!-- Include Select2 JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-
-    <title>Tender Number Generator</title>
-    <style>
-        /* General Reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background-color: #f9f9f9;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        h1 {
-            text-align: center;
-            margin-top: 20px;
-            color: #2c3e50;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 500px;
-            margin: 20px auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Feedback Messages */
-        .success-message, .error-message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .success-message {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .error-message {
-            background-color: #ffebee;
-            color: #c62828;
-        }
-
-        /* Form Styling */
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            margin-top: 10px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        input, select, textarea {
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1rem;
-            resize: vertical; /* Allows resizing of textarea */
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-
-        button {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #3498db;
-            color: white;
-            font-size: 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #2980b9;
-        }
-
-        /* Logout Button */
-        .logout-btn {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #e74c3c;
-            color: white;
-            font-size: 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background-color: #c0392b;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            .container {
-                padding: 15px;
-            }
-        }
-    </style>
 </head>
-<body>
-    <h1>Tender Number Generator</h1>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto mt-10">
+        <h1 class="text-3xl font-bold text-center mb-6">Tender Number Generator</h1>
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
+            {% if tender_number %}
+                <p class="bg-green-100 text-green-700 p-4 rounded mb-4"><strong>Generated Tender Number:</strong> {{ tender_number }}</p>
+            {% endif %}
 
-    <div class="container">
-        {% if tender_number %}
-            <p class="success-message"><strong>Generated Tender Number:</strong> {{ tender_number }}</p>
-        {% endif %}
+            {% if tender_description %}
+                <p class="mb-4"><strong>Tender Topic/Description:</strong> {{ tender_description }} {{ tender_number }}</p>
+            {% endif %}
 
-        {% if tender_description %}
-            <p><strong>Tender Topic/Description:</strong> {{ tender_description }} {{ tender_number }}</p>
-        {% endif %}
+            {% if error %}
+                <p class="bg-red-100 text-red-700 p-4 rounded mb-4">Error: {{ error }}</p>
+            {% endif %}
 
-        {% if error %}
-            <p class="error-message">Error: {{ error }}</p>
-        {% endif %}
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="department_code" class="block text-sm font-medium text-gray-700">Department Code:</label>
+                    <select id="department_code" name="department_code" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                        {% for code in department_codes %}
+                            <option value="{{ code }}">{{ code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-        <form method="POST">
-            {% csrf_token %}
-            <label for="department_code">Department Code:</label>
-            <select id="department_code" name="department_code" required>
-                {% for code in department_codes %}
-                    <option value="{{ code }}">{{ code }}</option>
-                {% endfor %}
-            </select>
+                <div class="form-group">
+                    <label for="tender_description" class="block text-sm font-medium text-gray-700">Tender Topic/Description:</label>
+                    <textarea id="tender_description" name="tender_description" rows="4" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Provide a brief description of the tender topic" required></textarea>
+                </div>
 
-            <!-- New tender description field -->
-            <label for="tender_description">Tender Topic/Description:</label>
-            <textarea id="tender_description" name="tender_description" rows="4" placeholder="Provide a brief description of the tender topic" required></textarea>
+                <div class="form-group">
+                    <label for="category_code" class="block text-sm font-medium text-gray-700">Category Code:</label>
+                    <select id="category_code" name="category_code" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                        <option value="" disabled selected>Select a Category</option>
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
 
-            <label for="category_code">Category Code:</label>
-            <!-- Category select box (searchable) -->
-            <select id="category_code" name="category_code" required>
-                <option value="" disabled selected>Select a Category</option>
-                <!-- Options will be populated dynamically -->
-            </select>
+                <div class="form-group">
+                    <label for="procurement_type" class="block text-sm font-medium text-gray-700">Procurement Type:</label>
+                    <input type="text" id="procurement_type" name="procurement_type" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., SIS" required>
+                </div>
 
-            <label for="procurement_type">Procurement Type:</label>
-            <input type="text" id="procurement_type" name="procurement_type" placeholder="e.g., SIS" required>
+                <div class="form-group">
+                    <label for="amendment" class="block text-sm font-medium text-gray-700">Amendment (optional): <span class="tooltip" title="Enter the amendment number, e.g., A1">?</span></label>
+                    <input type="text" id="amendment" name="amendment" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., A1">
+                </div>
 
-            <!-- New amendment field -->
-            <label for="amendment">Amendment (optional):</label>
-            <input type="text" id="amendment" name="amendment" placeholder="e.g., A1">
+                <div class="form-group">
+                    <label for="call_off" class="block text-sm font-medium text-gray-700">Call-off (optional):</label>
+                    <input type="text" id="call_off" name="call_off" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., C02">
+                </div>
 
-            <!-- New call-off field -->
-            <label for="call_off">Call-off (optional):</label>
-            <input type="text" id="call_off" name="call_off" placeholder="e.g., C02">
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Generate</button>
+            </form>
 
-            <button type="submit">Generate</button>
-        </form>
-
-        <!-- Logout Button -->
-        <form method="POST" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="logout-btn">Logout</button>
-        </form>
+            <form method="POST" action="{% url 'logout' %}" class="mt-4">
+                {% csrf_token %}
+                <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">Logout</button>
+            </form>
+        </div>
     </div>
 
     <script>
