@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <h2 class="text-2xl font-bold mb-4">Tender Numbers</h2>
+
+    {% if tenders %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white shadow-md rounded">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-6 py-3">Tender Details</th>
+                        <th class="px-6 py-3">Description</th>
+                        <th class="px-6 py-3">Status</th>
+                        <th class="px-6 py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for tender in tenders %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ tender.tender_number }}</div>
+                                {% if tender.isodetail %}
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-link mr-1"></i>ISO: {{ tender.isodetail.iso_number }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">{{ tender.description }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                    {% if tender.status == 'Pending' %}bg-yellow-100 text-yellow-800
+                                    {% elif tender.status == 'In Progress' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-green-100 text-green-800{% endif %}">
+                                    {{ tender.status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{% url 'tender_update' tender.id %}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-gray-600">No tenders found.</p>
+    {% endif %}
+</div>
+{% endblock %}

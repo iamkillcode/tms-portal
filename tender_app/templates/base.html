@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FDA - Tender Management System{% endblock %}</title>
+     <!-- Tailwind CSS -->
+     <script src="https://cdn.tailwindcss.com"></script>
+
+     <!-- Font Awesome -->
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+     <!-- Custom CSS -->
+     <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .nav-link { @apply px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200; }
+        .dropdown-menu {
+            @apply absolute left-0 w-56 mt-2 origin-top-left bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none;
+            display: none;
+            top: 100%;
+        }
+        .dropdown:hover .dropdown-menu { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-10px); } to { transform: translateY(0); } }
+        .dropdown-menu {
+            animation: fadeIn 0.2s ease-out, slideDown 0.2s ease-out;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-blue-50">
+    <nav class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-lg fixed w-full z-10 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'home' %}" class="flex-shrink-0">
+                        <img class="h-12 w-auto" src="/static/img/fdalogo.png" alt="FDA Logo">
+                    </a>
+                    <div class="hidden md:block ml-10">
+                        <div class="flex items-baseline space-x-4">
+                            <a href="{% url 'home' %}" class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700">Home</a>
+                            {% if user.is_authenticated %}
+                                <div class="dropdown relative">
+                                    <button class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700 inline-flex items-center">
+                                        Tender
+                                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="{% url 'tender_generator' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Generate Tender</a>
+                                        <a href="{% url 'tender_number_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">View Tenders</a>
+                                    </div>
+                                </div>
+                                <div class="dropdown relative">
+                                    <button class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700 inline-flex items-center">
+                                        ISO
+                                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="{% url 'iso_number_generator' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Generate ISO</a>
+                                        <a href="{% url 'iso_number_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">View ISOs</a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-4 flex items-center md:ml-6">
+                        {% if user.is_authenticated %}
+                            <div class="dropdown relative">
+                                <button class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700 inline-flex items-center">
+                                    {{ user.username }}
+                                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Logout</a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700">Login</a>
+                            <a href="{% url 'register' %}" class="nav-link ml-2 bg-blue-500 text-white hover:bg-blue-600">Register</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-button">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars block h-6 w-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="{% url 'home' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Home</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'tender_generator' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Generate Tender</a>
+                    <a href="{% url 'tender_number_list' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">View Tenders</a>
+                    <a href="{% url 'iso_number_generator' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Generate ISO</a>
+                    <a href="{% url 'iso_number_list' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">View ISOs</a>
+                    <a href="{% url 'logout' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Login</a>
+                    <a href="{% url 'register' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="pt-16">
+        {% if messages %}
+            <div class="fixed top-16 right-4 z-50 space-y-4">
+                {% for message in messages %}
+                    <div class="bg-white rounded-lg shadow-lg border-l-4 {% if message.tags == 'success' %}border-green-500{% elif message.tags == 'error' %}border-red-500{% else %}border-blue-500{% endif %} p-4 max-w-md">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                {% if message.tags == 'success' %}
+                                    <i class="fas fa-check-circle text-green-500 text-lg"></i>
+                                {% elif message.tags == 'error' %}
+                                    <i class="fas fa-exclamation-circle text-red-500 text-lg"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle text-blue-500 text-lg"></i>
+                                {% endif %}
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-700">{{ message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-white bg-opacity-80 backdrop-filter backdrop-blur-lg border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500">
+                © <span id="current-year"></span> Food and Drugs Authority - Tender Management System
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!mobileMenu.contains(event.target) && !mobileMenuButton.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

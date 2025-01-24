@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}ISO Number Generator - FDA TMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container--default .select2-selection--single {
+        @apply border-gray-300 rounded-md shadow-sm;
+        height: 38px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        @apply text-gray-700 leading-tight;
+        line-height: 38px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+    .input-group {
+        @apply relative;
+    }
+    .input-group i {
+        @apply absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400;
+    }
+    .input-group input, .input-group .select2-container {
+        @apply pl-10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">
+        <i class="fas fa-barcode mr-2"></i>ISO Number Generator
+    </h1>
+
+    {% if form.tender.queryset.count == 0 %}
+    <div class="bg-yellow-100 text-yellow-700 p-4 rounded-md mb-6">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        No eligible tenders found. Please create a tender first.
+    </div>
+    {% else %}
+    <form method="POST" class="space-y-6 bg-white shadow-md rounded-lg p-6">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.tender.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                Select Tender:
+            </label>
+            <div class="input-group">
+                <i class="fas fa-file-alt"></i>
+                {{ form.tender }}
+            </div>
+            {% if form.tender.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ form.tender.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.type_of_letter.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                Type of Letter:
+            </label>
+            <div class="input-group">
+                <i class="fas fa-envelope"></i>
+                {{ form.type_of_letter }}
+            </div>
+            {% if form.type_of_letter.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ form.type_of_letter.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.procurement_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                Procurement Type:
+            </label>
+            <div class="input-group">
+                <i class="fas fa-shopping-cart"></i>
+                {{ form.procurement_type }}
+            </div>
+            {% if form.procurement_type.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ form.procurement_type.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out flex items-center justify-center">
+            <i class="fas fa-cog mr-2"></i>Generate ISO Number
+        </button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2-with-tags').select2({
+            tags: true,
+            placeholder: "Select or type Division",
+            allowClear: true,
+            theme: "default",
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %}

@@ -1,22 +1,87 @@
-<!-- home.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-</head>
-<body>
-    <h1>Welcome to the Tender System</h1>
-    <p>Logged in as {{ user.username }}</p>
-    <a href="{% url 'logout' %}">Logout</a>
+{% extends 'base.html' %}
+{% load static %}
 
-    {% if user.is_authenticated %}
-    <p>Welcome, {{ user.username }}!</p>
-    <a href="{% url 'logout' %}">Logout</a>
-{% else %}
-    <a href="{% url 'login' %}">Login</a>
-{% endif %}
+{% block content %}
+<div class="min-h-screen -mt-16 pt-16">
+    <!-- Hero Section -->
+    <div class="py-20 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
+                <div class="mb-12 lg:mb-0">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                        Welcome to FDA Tender Management System
+                    </h1>
+                    <p class="text-lg text-gray-600 mb-8">
+                        Streamline your tender and ISO number generation process with our efficient management system.
+                    </p>
+                    {% if user.is_authenticated %}
+                    <div class="flex flex-wrap gap-4">
+                        <a href="{% url 'tender_generator' %}" class="btn-primary">
+                            <i class="fas fa-plus-circle mr-2"></i>Generate Tender
+                        </a>
+                        <a href="{% url 'iso_number_generator' %}" class="btn-secondary">
+                            <i class="fas fa-certificate mr-2"></i>Generate ISO
+                        </a>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn-primary">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Get Started
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="relative">
+                    <div class="relative rounded-lg overflow-hidden shadow-xl">
+                        <img src="{% static 'img/dashboard-preview.webp' %}" alt="Dashboard Preview" class="w-full h-auto">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-blue-500 to-indigo-500 opacity-20"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Features Section -->
+    <div class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Key Features</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-file-alt text-2xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Tender Generation</h3>
+                    <p class="text-gray-600">Generate and manage tender numbers efficiently with our automated system.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-certificate text-2xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">ISO Management</h3>
+                    <p class="text-gray-600">Streamline ISO number generation and tracking in one place.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-history text-2xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">History Tracking</h3>
+                    <p class="text-gray-600">Keep track of all generated numbers with detailed history and audit trails.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<footer class="footer mt-auto">
+    <div class="max-w-7xl mx-auto py-4 px-4">
+        <p class="text-center text-600">
+            &copy; {% now "Y" %} Food and Drugs Authority - Tender Management System. All rights reserved.
+        </p>
+    </div>
+</footer>
 </body>
 </html>
