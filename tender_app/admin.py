@@ -1,23 +1,48 @@
 from django.contrib import admin
 from .models import (
-    TenderTracker,
-    Department,
     Tender,
-    ActivityLog,
     ISODetail,
+    UserProfile,
+    Department,
+    Category,
+    TenderTracker,
     ISOTracker,
+    SystemActivityLog,
 )
 import csv
 from django.http import HttpResponse
 from openpyxl import Workbook
 from django.utils.timezone import localtime
 from typing import Optional, Sequence, Any
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
 
 
-@admin.register(TenderTracker)
-class TenderTrackerAdmin(admin.ModelAdmin):
-    list_display = ("year", "last_sequence")
-    list_filter = ("year",)
+class ProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = "Profile"
+
+
+class CustomUserAdmin(UserAdmin):
+    inlines = (ProfileInline,)
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "is_staff",
+        "get_department",
+    )
+
+    def get_department(self, obj):
+        return obj.userprofile.department if hasattr(obj, "userprofile") else None
+
+    get_department.short_description = "Department"
+
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
 
 
 @admin.register(Department)
@@ -37,67 +62,22 @@ class DepartmentAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-@admin.register(ActivityLog)
-class ActivityLogAdmin(admin.ModelAdmin):
-    list_display = ("date", "officer", "activity_description", "tender")
-    search_fields = (
-        "officer__username",
-        "activity_description",
-        "tender__tender_number",
-    )
-    list_filter = ("date", "officer", "tender")
-    actions = ["export_to_csv", "export_to_excel"]
+@admin.register(SystemActivityLog)
+class SystemActivityLogAdmin(admin.ModelAdmin):
+    """Admin configuration for SystemActivityLog model."""
 
-    # Custom action to export selected activity logs to CSV
-    def export_to_csv(self, request, queryset):
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = 'attachment; filename="activity_logs.csv"'
-
-        writer = csv.writer(response)
-        writer.writerow(["Date", "Officer", "Activity Description", "Tender"])
-        for log in queryset:
-            writer.writerow(
-                [
-                    log.date,
-                    log.officer.username,
-                    log.activity_description,
-                    log.tender.tender_number,
-                ]
-            )
-        return response
-
-    export_to_csv.short_description = "Export selected activity logs to CSV"
-
-    # Custom action to export selected activity logs to Excel
-    def export_to_excel(self, request, queryset):
-        response = HttpResponse(
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-        response["Content-Disposition"] = 'attachment; filename="activity_logs.xlsx"'
-
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Activity Logs"
-
-        # Write header
-        headers = ["Date", "Officer", "Activity Description", "Tender"]
-        ws.append(headers)
-
-        # Write data
-        for log in queryset:
-            ws.append(
-                [
-                    log.date,
-                    log.officer.username,
-                    log.activity_description,
-                    log.tender.tender_number,
-                ]
-            )
-
-        wb.save(response)
-        return response
-
-    export_to_excel.short_description = "Export selected activity logs to Excel"
+    list_display = [
+        "timestamp",
+        "user",
+        "action",
+        "description",
+        "target_model",
+        "target_id",
+    ]
+    list_filter = ["timestamp", "user", "action", "target_model"]
+    search_fields = ["user__username", "description", "target_model"]
+    readonly_fields = ["timestamp", "ip_address", "user_agent"]
+    ordering = ["-timestamp"]
 
 
 @admin.register(Tender)

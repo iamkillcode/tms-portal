@@ -1,76 +1,176 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Tender Management System{% endblock %}
 
 {% block content %}
-<div class="min-h-screen -mt-16 pt-16">
-    <!-- Hero Section -->
-    <div class="py-20 bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
-                <div class="mb-12 lg:mb-0">
-                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                        Welcome to FDA Tender Management System
-                    </h1>
-                    <p class="text-lg text-gray-600 mb-8">
-                        Streamline your tender and ISO number generation process with our efficient management system.
-                    </p>
-                    {% if user.is_authenticated %}
-                    <div class="flex flex-wrap gap-4">
-                        <a href="{% url 'tender_generator' %}" class="btn-primary">
-                            <i class="fas fa-plus-circle mr-2"></i>Generate Tender
-                        </a>
-                        <a href="{% url 'iso_number_generator' %}" class="btn-secondary">
-                            <i class="fas fa-certificate mr-2"></i>Generate ISO
-                        </a>
-                    </div>
-                    {% else %}
-                    <a href="{% url 'login' %}" class="btn-primary">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Get Started
-                    </a>
-                    {% endif %}
+<div class="bg-white shadow rounded-lg">
+    <!-- Header -->
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Welcome, {{ user.profile.full_name }}
+        </h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            {{ user.profile.role|title }} Dashboard
+        </p>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="px-4 py-5 sm:p-6">
+        <dl class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <!-- Total Tenders -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Total Tenders
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ total_tenders }}
+                    </dd>
                 </div>
-                <div class="relative">
-                    <div class="relative rounded-lg overflow-hidden shadow-xl">
-                        <img src="{% static 'img/dashboard-preview.webp' %}" alt="Dashboard Preview" class="w-full h-auto">
-                        <div class="absolute inset-0 bg-gradient-to-tr from-blue-500 to-indigo-500 opacity-20"></div>
+                <div class="bg-gray-50 px-4 py-4 sm:px-6">
+                    <div class="text-sm">
+                        <a href="{% url 'tender_list' %}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                            View all<span class="sr-only"> tenders</span>
+                        </a>
                     </div>
                 </div>
             </div>
+
+            <!-- Pending Tenders -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Pending Tenders
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ pending_tenders }}
+                    </dd>
+                </div>
+                <div class="bg-gray-50 px-4 py-4 sm:px-6">
+                    <div class="text-sm">
+                        <a href="{% url 'tender_list' %}?status=pending" class="font-medium text-indigo-600 hover:text-indigo-500">
+                            View pending<span class="sr-only"> tenders</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Tenders -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Completed Tenders
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ completed_tenders }}
+                    </dd>
+                </div>
+                <div class="bg-gray-50 px-4 py-4 sm:px-6">
+                    <div class="text-sm">
+                        <a href="{% url 'tender_list' %}?status=completed" class="font-medium text-indigo-600 hover:text-indigo-500">
+                            View completed<span class="sr-only"> tenders</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Tenders -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Your Tenders
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ user_tenders }}
+                    </dd>
+                </div>
+                <div class="bg-gray-50 px-4 py-4 sm:px-6">
+                    <div class="text-sm">
+                        <a href="{% url 'tender_list' %}?user={{ user.id }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                            View yours<span class="sr-only"> tenders</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="px-4 py-5 sm:px-6 border-t border-gray-200">
+        <h4 class="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h4>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <a href="{% url 'tender_create' %}"
+               class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                New Tender
+            </a>
+            {% if user.profile.role == 'admin' %}
+            <a href="{% url 'admin:tender_app_tender_changelist' %}"
+               class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Manage Tenders
+            </a>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Features Section -->
-    <div class="py-16 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Key Features</h2>
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
-                <div class="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                        <i class="fas fa-file-alt text-2xl text-blue-600"></i>
+    <!-- Recent Activity -->
+    <div class="px-4 py-5 sm:px-6 border-t border-gray-200">
+        <h4 class="text-lg leading-6 font-medium text-gray-900 mb-4">Recent Activity</h4>
+        <div class="flow-root">
+            <ul role="list" class="-mb-8">
+                {% for activity in recent_activities %}
+                <li>
+                    <div class="relative pb-8">
+                        {% if not forloop.last %}
+                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                        {% endif %}
+                        <div class="relative flex space-x-3">
+                            <div>
+                                <span class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white">
+                                    {% if activity.action == 'create' %}
+                                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                    {% elif activity.action == 'update' %}
+                                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                <div>
+                                    <p class="text-sm text-gray-500">
+                                        {{ activity.activity_description }}
+                                        <a href="{% url 'tender_detail' activity.tender.id %}" class="font-medium text-gray-900">
+                                            {{ activity.tender.tender_number }}
+                                        </a>
+                                    </p>
+                                </div>
+                                <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                                    <time datetime="{{ activity.date|date:'c' }}">{{ activity.date|timesince }} ago</time>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-semibold mb-2">Tender Generation</h3>
-                    <p class="text-gray-600">Generate and manage tender numbers efficiently with our automated system.</p>
-                </div>
-
-                <!-- Feature 2 -->
-                <div class="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                        <i class="fas fa-certificate text-2xl text-green-600"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">ISO Management</h3>
-                    <p class="text-gray-600">Streamline ISO number generation and tracking in one place.</p>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                        <i class="fas fa-history text-2xl text-purple-600"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">History Tracking</h3>
-                    <p class="text-gray-600">Keep track of all generated numbers with detailed history and audit trails.</p>
-                </div>
-            </div>
+                </li>
+                {% empty %}
+                <li class="text-center py-4 text-gray-500">
+                    No recent activity
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 </div>

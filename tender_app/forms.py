@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import UserProfile, Tender, ISODetail
+from .models import UserProfile, Tender, ISODetail, Department
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -10,27 +10,33 @@ from datetime import date
 
 
 class CustomUserCreationForm(UserCreationForm):
-    full_name = forms.CharField(max_length=150, required=True, label="Full Name")
+    """Form for creating a new user with profile information."""
 
-    class Meta:
+    full_name = forms.CharField(max_length=150)
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.all(), required=False
+    )
+    phone_number = forms.CharField(max_length=20, required=False)
+
+    class Meta(UserCreationForm.Meta):
         model = User
-        fields = ["username", "full_name", "email", "password1", "password2"]
+        fields = ["username", "email", "full_name", "department", "phone_number"]
 
-    def save(self, commit=True):
+    def save(self, commit: bool = True) -> User:
+        """Save the user and create their profile."""
         user = super().save(commit=False)
+        user.email = self.cleaned_data["email"]
+
         if commit:
             user.save()
             UserProfile.objects.create(
-                user=user, full_name=self.cleaned_data["full_name"]
+                user=user,
+                full_name=self.cleaned_data["full_name"],
+                department=self.cleaned_data["department"],
+                phone_number=self.cleaned_data["phone_number"],
             )
-        return user
 
-    def clean_email(self) -> str:
-        """Validate email uniqueness."""
-        email = self.cleaned_data.get("email")
-        if email and User.objects.filter(email=email).exists():
-            raise ValidationError("Email already exists")
-        return email
+        return user
 
 
 class LoginForm(AuthenticationForm):
@@ -307,3 +313,116 @@ class ISODetailForm(forms.ModelForm):
                 isodetail__isnull=False,  # Only show tenders without ISO
                 # status='Approved'# Only show approved tenders
             )
+
+
+class UserProfileForm(forms.ModelForm):
+    """Form for updating user profile information."""
+
+    email = forms.EmailField()
+
+    class Meta:
+        model = UserProfile
+        fields = ["full_name", "department", "phone_number"]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.user:
+            self.fields["email"].initial = self.instance.user.email
+
+    def save(self, commit: bool = True) -> UserProfile:
+        """Save the profile and update user email."""
+        profile = super().save(commit=False)
+        if commit:
+            # Update user email
+            profile.user.email = self.cleaned_data["email"]
+            profile.user.save()
+            profile.save()
+        return profile
+
+
+class TenderForm(forms.ModelForm):
+    """Form for creating and editing tenders."""
+
+    class Meta:
+        model = Tender
+        fields = [
+            "title",
+            "description",
+            "procurement_type",
+            "estimated_value",
+            "currency",
+            "department",
+            "category",
+            "name_of_vendor_consultant",
+            "vendor_email",
+            "vendor_phone",
+            "invitation_date",
+            "closing_date",
+            "file_name",
+            "file_no",
+        ]
+        widgets = {
+            "invitation_date": forms.DateInput(attrs={"type": "date"}),
+            "closing_date": forms.DateInput(attrs={"type": "date"}),
+            "description": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def clean(self) -> dict[str, Any]:
+        """Validate tender form data."""
+        cleaned_data = super().clean()
+        invitation_date = cleaned_data.get("invitation_date")
+        closing_date = cleaned_data.get("closing_date")
+
+        if invitation_date and closing_date:
+            if closing_date < invitation_date:
+                raise ValidationError(
+                    {
+                        "closing_date": "Closing date cannot be earlier than invitation date"
+                    }
+                )
+
+        return cleaned_data
+
+
+class TenderFilterForm(forms.Form):
+    """Form for filtering tenders in the list view."""
+
+    SORT_CHOICES = [
+        ("-created_at", "Newest First"),
+        ("created_at", "Oldest First"),
+        ("tender_number", "Tender Number"),
+        ("title", "Title"),
+    ]
+
+    search = forms.CharField(required=False)
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.all(), required=False
+    )
+    procurement_type = forms.ChoiceField(
+        choices=[("", "All")] + Tender.PROCUREMENT_TYPE_CHOICES, required=False
+    )
+    status = forms.ChoiceField(
+        choices=[("", "All")] + Tender.STATUS_CHOICES, required=False
+    )
+    date_from = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={"type": "date"})
+    )
+    date_to = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={"type": "date"})
+    )
+    sort_by = forms.ChoiceField(
+        choices=SORT_CHOICES, required=False, initial="-created_at"
+    )
+
+    def clean(self) -> dict[str, Any]:
+        """Validate filter form data."""
+        cleaned_data = super().clean()
+        date_from = cleaned_data.get("date_from")
+        date_to = cleaned_data.get("date_to")
+
+        if date_from and date_to and date_to < date_from:
+            raise ValidationError(
+                {"date_to": "End date cannot be earlier than start date"}
+            )
+
+        return cleaned_data

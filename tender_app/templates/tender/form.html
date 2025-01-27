@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}{% if tender.pk %}Edit{% else %}New{% endif %} Tender - Tender Management System{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <!-- Header -->
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    {% if tender.pk %}Edit Tender{% else %}Create New Tender{% endif %}
+                </h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    {% if tender.pk %}
+                        Editing tender {{ tender.tender_number }}
+                    {% else %}
+                        Fill in the tender details below
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'tender_list' %}"
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="px-4 py-5 sm:p-6">
+        <form method="post" class="space-y-8 divide-y divide-gray-200">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="rounded-md bg-red-50 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="space-y-8 divide-y divide-gray-200">
+                <!-- Basic Information -->
+                <div class="pt-8">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Basic Information</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Provide the basic details of the tender.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <!-- Title -->
+                        <div class="sm:col-span-4">
+                            <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Title
+                            </label>
+                            <div class="mt-1">
+                                <input type="text"
+                                       name="{{ form.title.html_name }}"
+                                       id="{{ form.title.id_for_label }}"
+                                       value="{{ form.title.value|default:'' }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.title.errors %}border-red-300{% endif %}"
+                                       required>
+                                {% if form.title.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="sm:col-span-6">
+                            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Description
+                            </label>
+                            <div class="mt-1">
+                                <textarea id="{{ form.description.id_for_label }}"
+                                          name="{{ form.description.html_name }}"
+                                          rows="3"
+                                          class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.description.errors %}border-red-300{% endif %}"
+                                          required>{{ form.description.value|default:'' }}</textarea>
+                                {% if form.description.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Procurement Type -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.procurement_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Procurement Type
+                            </label>
+                            <div class="mt-1">
+                                <select id="{{ form.procurement_type.id_for_label }}"
+                                        name="{{ form.procurement_type.html_name }}"
+                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.procurement_type.errors %}border-red-300{% endif %}">
+                                    {% for value, label in form.procurement_type.field.choices %}
+                                        <option value="{{ value }}" {% if form.procurement_type.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.procurement_type.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.procurement_type.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Department -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.department.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Department
+                            </label>
+                            <div class="mt-1">
+                                <select id="{{ form.department.id_for_label }}"
+                                        name="{{ form.department.html_name }}"
+                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.department.errors %}border-red-300{% endif %}">
+                                    <option value="">Select a department</option>
+                                    {% for value, label in form.department.field.choices %}
+                                        <option value="{{ value }}" {% if form.department.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.department.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.department.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Information -->
+                <div class="pt-8">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Financial Information</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Specify the estimated value and currency.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <!-- Estimated Value -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.estimated_value.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Estimated Value
+                            </label>
+                            <div class="mt-1">
+                                <input type="number"
+                                       name="{{ form.estimated_value.html_name }}"
+                                       id="{{ form.estimated_value.id_for_label }}"
+                                       value="{{ form.estimated_value.value|default:'' }}"
+                                       step="0.01"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.estimated_value.errors %}border-red-300{% endif %}">
+                                {% if form.estimated_value.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.estimated_value.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Currency -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.currency.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Currency
+                            </label>
+                            <div class="mt-1">
+                                <select id="{{ form.currency.id_for_label }}"
+                                        name="{{ form.currency.html_name }}"
+                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.currency.errors %}border-red-300{% endif %}">
+                                    {% for value, label in form.currency.field.choices %}
+                                        <option value="{{ value }}" {% if form.currency.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.currency.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.currency.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vendor Information -->
+                <div class="pt-8">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Vendor Information</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Provide vendor contact details.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <!-- Vendor Name -->
+                        <div class="sm:col-span-4">
+                            <label for="{{ form.name_of_vendor_consultant.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Vendor Name
+                            </label>
+                            <div class="mt-1">
+                                <input type="text"
+                                       name="{{ form.name_of_vendor_consultant.html_name }}"
+                                       id="{{ form.name_of_vendor_consultant.id_for_label }}"
+                                       value="{{ form.name_of_vendor_consultant.value|default:'' }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.name_of_vendor_consultant.errors %}border-red-300{% endif %}">
+                                {% if form.name_of_vendor_consultant.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.name_of_vendor_consultant.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Vendor Email -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.vendor_email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Vendor Email
+                            </label>
+                            <div class="mt-1">
+                                <input type="email"
+                                       name="{{ form.vendor_email.html_name }}"
+                                       id="{{ form.vendor_email.id_for_label }}"
+                                       value="{{ form.vendor_email.value|default:'' }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.vendor_email.errors %}border-red-300{% endif %}">
+                                {% if form.vendor_email.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.vendor_email.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Vendor Phone -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.vendor_phone.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Vendor Phone
+                            </label>
+                            <div class="mt-1">
+                                <input type="tel"
+                                       name="{{ form.vendor_phone.html_name }}"
+                                       id="{{ form.vendor_phone.id_for_label }}"
+                                       value="{{ form.vendor_phone.value|default:'' }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.vendor_phone.errors %}border-red-300{% endif %}">
+                                {% if form.vendor_phone.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.vendor_phone.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Dates -->
+                <div class="pt-8">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Important Dates</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Set the invitation and closing dates.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <!-- Invitation Date -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.invitation_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Invitation Date
+                            </label>
+                            <div class="mt-1">
+                                <input type="date"
+                                       name="{{ form.invitation_date.html_name }}"
+                                       id="{{ form.invitation_date.id_for_label }}"
+                                       value="{{ form.invitation_date.value|date:'Y-m-d'|default:'' }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.invitation_date.errors %}border-red-300{% endif %}">
+                                {% if form.invitation_date.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.invitation_date.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Closing Date -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.closing_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Closing Date
+                            </label>
+                            <div class="mt-1">
+                                <input type="date"
+                                       name="{{ form.closing_date.html_name }}"
+                                       id="{{ form.closing_date.id_for_label }}"
+                                       value="{{ form.closing_date.value|date:'Y-m-d'|default:'' }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.closing_date.errors %}border-red-300{% endif %}">
+                                {% if form.closing_date.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.closing_date.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="pt-8">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Additional Information</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Provide any additional details.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <!-- File Name -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.file_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                File Name
+                            </label>
+                            <div class="mt-1">
+                                <input type="text"
+                                       name="{{ form.file_name.html_name }}"
+                                       id="{{ form.file_name.id_for_label }}"
+                                       value="{{ form.file_name.value|default:'' }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.file_name.errors %}border-red-300{% endif %}">
+                                {% if form.file_name.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.file_name.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- File Number -->
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.file_no.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                File Number
+                            </label>
+                            <div class="mt-1">
+                                <input type="text"
+                                       name="{{ form.file_no.html_name }}"
+                                       id="{{ form.file_no.id_for_label }}"
+                                       value="{{ form.file_no.value|default:'' }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.file_no.errors %}border-red-300{% endif %}">
+                                {% if form.file_no.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.file_no.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-5">
+                <div class="flex justify-end">
+                    <a href="{% url 'tender_list' %}"
+                       class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                            class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        {% if tender.pk %}Save Changes{% else %}Create Tender{% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

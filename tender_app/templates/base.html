@@ -3,168 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}FDA - Tender Management System{% endblock %}</title>
-     <!-- Tailwind CSS -->
-     <script src="https://cdn.tailwindcss.com"></script>
+    <title>{% block title %}Tender Management System{% endblock %}</title>
 
-     <!-- Font Awesome -->
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-     <!-- Custom CSS -->
-     <link rel="stylesheet" href="css/style.css">
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Custom styles -->
     <style>
-        .nav-link { @apply px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200; }
-        .dropdown-menu {
-            @apply absolute left-0 w-56 mt-2 origin-top-left bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none;
-            display: none;
-            top: 100%;
-        }
-        .dropdown:hover .dropdown-menu { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideDown { from { transform: translateY(-10px); } to { transform: translateY(0); } }
-        .dropdown-menu {
-            animation: fadeIn 0.2s ease-out, slideDown 0.2s ease-out;
-        }
+        [x-cloak] { display: none !important; }
     </style>
-    {% block extra_css %}{% endblock %}
+
+    {% block extra_head %}{% endblock %}
 </head>
-<body class="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-blue-50">
-    <nav class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-lg fixed w-full z-10 shadow-sm">
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg" x-data="{ isOpen: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center">
-                    <a href="{% url 'home' %}" class="flex-shrink-0">
-                        <img class="h-12 w-auto" src="/static/img/fdalogo.png" alt="FDA Logo">
-                    </a>
-                    <div class="hidden md:block ml-10">
-                        <div class="flex items-baseline space-x-4">
-                            <a href="{% url 'home' %}" class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700">Home</a>
-                            {% if user.is_authenticated %}
-                                <div class="dropdown relative">
-                                    <button class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700 inline-flex items-center">
-                                        Tender
-                                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a href="{% url 'tender_generator' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Generate Tender</a>
-                                        <a href="{% url 'tender_number_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">View Tenders</a>
-                                    </div>
-                                </div>
-                                <div class="dropdown relative">
-                                    <button class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700 inline-flex items-center">
-                                        ISO
-                                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a href="{% url 'iso_number_generator' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Generate ISO</a>
-                                        <a href="{% url 'iso_number_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">View ISOs</a>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </div>
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{% url 'home' %}" class="text-xl font-bold text-gray-800">
+                            TMS
+                        </a>
                     </div>
-                </div>
-                <div class="hidden md:block">
-                    <div class="ml-4 flex items-center md:ml-6">
+
+                    <!-- Desktop Navigation -->
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
                         {% if user.is_authenticated %}
-                            <div class="dropdown relative">
-                                <button class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700 inline-flex items-center">
-                                    {{ user.username }}
-                                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                                </button>
-                                <div class="dropdown-menu">
-                                    <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Logout</a>
-                                </div>
-                            </div>
-                        {% else %}
-                            <a href="{% url 'login' %}" class="nav-link text-gray-700 hover:bg-blue-50 hover:text-blue-700">Login</a>
-                            <a href="{% url 'register' %}" class="nav-link ml-2 bg-blue-500 text-white hover:bg-blue-600">Register</a>
+                            <a href="{% url 'home' %}"
+                               class="{% if request.resolver_match.url_name == 'home' %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Dashboard
+                            </a>
+                            <a href="{% url 'tender_list' %}"
+                               class="{% if 'tender' in request.resolver_match.url_name %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Tenders
+                            </a>
+                            {% if user.profile.role == 'admin' %}
+                            <a href="{% url 'admin:index' %}"
+                               class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Admin
+                            </a>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
-                <div class="-mr-2 flex md:hidden">
-                    <button type="button" class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-button">
+
+                <!-- User Menu -->
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    {% if user.is_authenticated %}
+                        <div class="ml-3 relative" x-data="{ isOpen: false }">
+                            <div>
+                                <button @click="isOpen = !isOpen"
+                                        class="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        id="user-menu-button">
+                                    <span class="sr-only">Open user menu</span>
+                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gray-500">
+                                        <span class="text-sm font-medium leading-none text-white">
+                                            {{ user.username|make_list|first|upper }}
+                                        </span>
+                                    </span>
+                                </button>
+                            </div>
+                            <div x-show="isOpen"
+                                 @click.away="isOpen = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                 role="menu">
+                                <a href="{% url 'profile' %}"
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                   role="menuitem">
+                                    Your Profile
+                                </a>
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            role="menuitem">
+                                        Sign out
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="flex space-x-4">
+                            <a href="{% url 'login' %}"
+                               class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                                Log in
+                            </a>
+                            <a href="{% url 'register' %}"
+                               class="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">
+                                Register
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="-mr-2 flex items-center sm:hidden">
+                    <button @click="isOpen = !isOpen"
+                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
                         <span class="sr-only">Open main menu</span>
-                        <i class="fas fa-bars block h-6 w-6"></i>
+                        <svg class="h-6 w-6" x-show="!isOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="h-6 w-6" x-show="isOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="md:hidden hidden" id="mobile-menu">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="{% url 'home' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Home</a>
+        <!-- Mobile menu -->
+        <div x-show="isOpen" class="sm:hidden">
+            <div class="pt-2 pb-3 space-y-1">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'tender_generator' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Generate Tender</a>
-                    <a href="{% url 'tender_number_list' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">View Tenders</a>
-                    <a href="{% url 'iso_number_generator' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Generate ISO</a>
-                    <a href="{% url 'iso_number_list' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">View ISOs</a>
-                    <a href="{% url 'logout' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Logout</a>
-                {% else %}
-                    <a href="{% url 'login' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Login</a>
-                    <a href="{% url 'register' %}" class="nav-link block text-gray-700 hover:bg-blue-50 hover:text-blue-700">Register</a>
+                    <a href="{% url 'home' %}"
+                       class="{% if request.resolver_match.url_name == 'home' %}bg-indigo-50 border-indigo-500 text-indigo-700{% else %}border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800{% endif %} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                        Dashboard
+                    </a>
+                    <a href="{% url 'tender_list' %}"
+                       class="{% if 'tender' in request.resolver_match.url_name %}bg-indigo-50 border-indigo-500 text-indigo-700{% else %}border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800{% endif %} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                        Tenders
+                    </a>
                 {% endif %}
             </div>
+
+            <!-- Mobile user menu -->
+            {% if user.is_authenticated %}
+                <div class="pt-4 pb-3 border-t border-gray-200">
+                    <div class="flex items-center px-4">
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-500">
+                                <span class="text-sm font-medium leading-none text-white">
+                                    {{ user.username|make_list|first|upper }}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="ml-3">
+                            <div class="text-base font-medium text-gray-800">{{ user.profile.full_name }}</div>
+                            <div class="text-sm font-medium text-gray-500">{{ user.email }}</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 space-y-1">
+                        <a href="{% url 'profile' %}"
+                           class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                            Your Profile
+                        </a>
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                                Sign out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </nav>
 
-    <div class="pt-16">
+    <!-- Page Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Alerts -->
         {% if messages %}
-            <div class="fixed top-16 right-4 z-50 space-y-4">
+            <div class="mb-8">
                 {% for message in messages %}
-                    <div class="bg-white rounded-lg shadow-lg border-l-4 {% if message.tags == 'success' %}border-green-500{% elif message.tags == 'error' %}border-red-500{% else %}border-blue-500{% endif %} p-4 max-w-md">
-                        <div class="flex items-center">
+                    <div x-data="{ show: true }"
+                         x-show="show"
+                         x-transition:enter="transform ease-out duration-300 transition"
+                         x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+                         x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+                         class="rounded-md p-4 {% if message.tags == 'error' %}bg-red-50{% elif message.tags == 'success' %}bg-green-50{% else %}bg-blue-50{% endif %} mb-4">
+                        <div class="flex">
                             <div class="flex-shrink-0">
-                                {% if message.tags == 'success' %}
-                                    <i class="fas fa-check-circle text-green-500 text-lg"></i>
-                                {% elif message.tags == 'error' %}
-                                    <i class="fas fa-exclamation-circle text-red-500 text-lg"></i>
+                                {% if message.tags == 'error' %}
+                                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                {% elif message.tags == 'success' %}
+                                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    </svg>
                                 {% else %}
-                                    <i class="fas fa-info-circle text-blue-500 text-lg"></i>
+                                    <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                    </svg>
                                 {% endif %}
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm text-gray-700">{{ message }}</p>
+                                <p class="text-sm font-medium {% if message.tags == 'error' %}text-red-800{% elif message.tags == 'success' %}text-green-800{% else %}text-blue-800{% endif %}">
+                                    {{ message }}
+                                </p>
+                            </div>
+                            <div class="ml-auto pl-3">
+                                <div class="-mx-1.5 -my-1.5">
+                                    <button @click="show = false" type="button" class="inline-flex rounded-md p-1.5 {% if message.tags == 'error' %}text-red-500 hover:bg-red-100{% elif message.tags == 'success' %}text-green-500 hover:bg-green-100{% else %}text-blue-500 hover:bg-blue-100{% endif %} focus:outline-none focus:ring-2 focus:ring-offset-2 {% if message.tags == 'error' %}focus:ring-red-500{% elif message.tags == 'success' %}focus:ring-green-500{% else %}focus:ring-blue-500{% endif %}">
+                                        <span class="sr-only">Dismiss</span>
+                                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         {% endif %}
-    </div>
 
-    <main class="flex-grow container mx-auto px-4 py-8">
+        <!-- Content -->
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-white bg-opacity-80 backdrop-filter backdrop-blur-lg border-t border-gray-200">
-        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-gray-500">
-                © <span id="current-year"></span> Food and Drugs Authority - Tender Management System
-            </p>
+    <!-- Footer -->
+    <footer class="bg-white mt-12">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+            <div class="flex justify-center space-x-6 md:order-2">
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Help</span>
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zm-1-5h2v2h-2v-2zm2-1.645V14h-2v-1.5a1 1 0 011-1 1.5 1.5 0 10-1.471-1.794l-1.962-.393A3.5 3.5 0 1113 13.355z"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="mt-8 md:mt-0 md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; {% now "Y" %} Tender Management System. All rights reserved.
+                </p>
+            </div>
         </div>
     </footer>
 
-    <script>
-        // Set current year in footer
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-
-        // Mobile menu toggle
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const mobileMenu = document.getElementById('mobile-menu');
-
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', (event) => {
-            if (!mobileMenu.contains(event.target) && !mobileMenuButton.contains(event.target)) {
-                mobileMenu.classList.add('hidden');
-            }
-        });
-    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

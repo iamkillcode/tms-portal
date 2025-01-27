@@ -16,7 +16,11 @@ urlpatterns = [
     ),
     path("register/", views.register_view, name="register"),
     path("home/", views.home_view, name="home"),
-    path("login/", views.custom_login_view, name="login"),  # Use custom login view
+    path(
+        "login/",
+        auth_views.LoginView.as_view(template_name="auth/login.html"),
+        name="login",
+    ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path(
         "create-iso-detail/", views.create_iso_detail, name="create_iso_detail"
@@ -26,5 +30,21 @@ urlpatterns = [
         views.TenderUpdateView.as_view(),
         name="tender_update",
     ),
-    path("", views.redirect_to_home, name="redirect_to_home"),  # Redirect root URL
+    path("", views.HomeView.as_view(), name="home"),
+    path("profile/", views.ProfileView.as_view(), name="profile"),
+    path("tenders/", views.TenderListView.as_view(), name="tender_list"),
+    path("tenders/create/", views.TenderCreateView.as_view(), name="tender_create"),
+    path("tenders/<int:pk>/", views.TenderDetailView.as_view(), name="tender_detail"),
+    path(
+        "tenders/<int:pk>/edit/", views.TenderUpdateView.as_view(), name="tender_edit"
+    ),
+    path(
+        "tenders/<int:pk>/delete/",
+        views.TenderDeleteView.as_view(),
+        name="tender_delete",
+    ),
+    path(
+        "api/departments/", views.DepartmentListView.as_view(), name="department_list"
+    ),
+    path("api/categories/", views.CategoryListView.as_view(), name="category_list"),
 ]
