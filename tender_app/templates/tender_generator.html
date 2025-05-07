@@ -1,207 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Include Select2 CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf/notyf.min.css">
+{% extends 'base.html' %}
+{% load static %}
 
-    <!-- Include jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% block title %}Generate Tender - TMS{% endblock %}
 
-    <!-- Include Select2 JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'css/tender.css' %}">
+{% endblock %}
 
-    <title>Tender Number Generator</title>
-    <style>
-        /* General Reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
+{% block content %}
+<div class="container tender-form-container">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <h2 class="card-title text-center mb-4">Generate Tender Number</h2>
 
-        body {
-            background-color: #f9f9f9;
-            color: #333;
-            line-height: 1.6;
-        }
+            {% if tender_number %}
+            <div class="generated-number">
+                <h5 class="mb-2">Generated Successfully</h5>
+                <p class="mb-0"><strong>Tender Number:</strong> {{ tender_number }}</p>
+                {% if tender_description %}
+                <p class="mb-0 mt-2"><strong>Description:</strong> {{ tender_description }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
 
-        h1 {
-            text-align: center;
-            margin-top: 20px;
-            color: #2c3e50;
-        }
+            {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
 
-        .container {
-            width: 90%;
-            max-width: 500px;
-            margin: 20px auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
+            <form method="POST" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="department_code" class="form-label">Department Code</label>
+                    <select class="form-select" id="department_code" name="department_code" required>
+                        <option value="" disabled selected>Select Department</option>
+                        {% for code in department_codes %}
+                        <option value="{{ code }}">{{ code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-        /* Feedback Messages */
-        .success-message, .error-message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
+                <div class="mb-3">
+                    <label for="tender_description" class="form-label">Tender Description</label>
+                    <textarea class="form-control" id="tender_description" name="tender_description" 
+                              rows="3" required placeholder="Enter tender description"></textarea>
+                </div>
 
-        .success-message {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-        }
+                <div class="mb-3">
+                    <label for="category_code" class="form-label">Category</label>
+                    <select class="form-select" id="category_code" name="category_code" required>
+                        <option value="" disabled selected>Select Category</option>
+                    </select>
+                </div>
 
-        .error-message {
-            background-color: #ffebee;
-            color: #c62828;
-        }
+                <div class="mb-4">
+                    <label for="procurement_type" class="form-label">Procurement Type</label>
+                    <input type="text" class="form-control" id="procurement_type" 
+                           name="procurement_type" placeholder="e.g., SIS" required>
+                </div>
 
-        /* Form Styling */
-        form {
-            display: flex;
-            flex-direction: column;
-        }
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label for="lot_number" class="form-label">Lot Number</label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="lot_number" 
+                               name="lot_number" 
+                               min="1"
+                               max="99"
+                               placeholder="00" 
+                               pattern="\d{1,2}">
+                        <div class="form-text">Enter a number (1-99)</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="amendment_number" class="form-label">Amendment Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text">A</span>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="amendment_number" 
+                                   name="amendment_number"
+                                   min="1"
+                                   max="99"
+                                   placeholder="0">
+                        </div>
+                        <div class="form-text">Enter a number (1-99)</div>
+                    </div>
+                
+                    <div class="col-md-4">
+                        <label for="call_off_number" class="form-label">Call Off Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text">CO</span>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="call_off_number" 
+                                   name="call_off_number"
+                                   min="1"
+                                   max="99"
+                                   placeholder="0">
+                        </div>
+                        <div class="form-text">Enter a number (1-99)</div>
+                    </div>
+                </div>
 
-        label {
-            margin-top: 10px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        input, select, textarea {
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1rem;
-            resize: vertical; /* Allows resizing of textarea */
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-
-        button {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #3498db;
-            color: white;
-            font-size: 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #2980b9;
-        }
-
-        /* Logout Button */
-        .logout-btn {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #e74c3c;
-            color: white;
-            font-size: 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background-color: #c0392b;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            .container {
-                padding: 15px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <h1>Tender Number Generator</h1>
-
-    <div class="container">
-        {% if tender_number %}
-            <p class="success-message"><strong>Generated Tender Number:</strong> {{ tender_number }}</p>
-        {% endif %}
-
-        {% if tender_description %}
-            <p><strong>Tender Topic/Description:</strong> {{ tender_description }} {{ tender_number }}</p>
-        {% endif %}
-
-        {% if error %}
-            <p class="error-message">Error: {{ error }}</p>
-        {% endif %}
-
-        <form method="POST">
-            {% csrf_token %}
-            <label for="department_code">Department Code:</label>
-            <select id="department_code" name="department_code" required>
-                {% for code in department_codes %}
-                    <option value="{{ code }}">{{ code }}</option>
-                {% endfor %}
-            </select>
-
-            <!-- New tender description field -->
-            <label for="tender_description">Tender Topic/Description:</label>
-            <textarea id="tender_description" name="tender_description" rows="4" placeholder="Provide a brief description of the tender topic" required></textarea>
-
-            <label for="category_code">Category Code:</label>
-            <!-- Category select box (searchable) -->
-            <select id="category_code" name="category_code" required>
-                <option value="" disabled selected>Select a Category</option>
-                <!-- Options will be populated dynamically -->
-            </select>
-
-            <label for="procurement_type">Procurement Type:</label>
-            <input type="text" id="procurement_type" name="procurement_type" placeholder="e.g., SIS" required>
-
-            <button type="submit">Generate</button>
-        </form>
-
-        <!-- Logout Button -->
-        <form method="POST" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="logout-btn">Logout</button>
-        </form>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary py-2">Generate Tender Number</button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        $(document).ready(function() {
-            // Initialize Select2 for the category_code field
-            $('#category_code').select2({
-                placeholder: 'Select a Category',
-                data: {{ category_data|safe }}  // Pass category data as JSON
-            });
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#category_code').select2({
+            placeholder: 'Select a Category',
+            data: {{ category_data|safe }}
         });
 
-        // Notyf notification initialization
-        const notyf = new Notyf();
-        
-        {% if messages %}
-            {% for message in messages %}
-                notyf.{{ message.tags }}('{{ message }}');
-            {% endfor %}
-        {% endif %}
-    </script>
+        // Form validation
+        $('.needs-validation').on('submit', function(event) {
+            if (!this.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            $(this).addClass('was-validated');
+        });
 
-    <script src="https://cdn.jsdelivr.net/npm/notyf/notyf.min.js"></script>
-</body>
-</html>
+        // Validate number inputs
+        $('input[type="number"]').on('input', function() {
+            let val = $(this).val();
+            let min = parseInt($(this).attr('min'));
+            let max = parseInt($(this).attr('max'));
+            
+            if (val !== '') {
+                val = parseInt(val);
+                if (val < min) $(this).val(min);
+                if (val > max) $(this).val(max);
+            }
+        });
+    });
+</script>
+{% endblock %}

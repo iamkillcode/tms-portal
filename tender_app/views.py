@@ -1,15 +1,51 @@
-from django.shortcuts import render, redirect
-from datetime import datetime
-from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from datetime import datetime, timezone  # For Python's built-in timezone
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from .models import TenderTracker, Department, Category, Tender
 from .forms import CustomUserCreationForm
+from django.contrib import messages
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django import forms
+from django.core.paginator import Paginator
+from django.db.models import Q
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
+from django.contrib.auth.models import User
+from tender_app.models import UserProfile
+from django.utils import timezone as django_timezone  # For Django's timezone utilities
+from .models import BreakfastItem, Order, OrderItem
+from django.urls import reverse
+from .models import ISONumber, ISOTracker, Division
+from django.db.models import Count
+from django.utils import timezone
+from datetime import timedelta
+
+# def create_missing_profiles():
+#     for user in User.objects.all():
+#         if not hasattr(user, 'profile'):
+#             UserProfile.objects.create(
+#                 user=user,
+#                 full_name=f"{user.first_name} {user.last_name}".strip() or user.username
+#             )
+
+# if __name__ == '__main__':
+#     create_missing_profiles()
 
 # Tender number generator view
 @login_required
 def tender_generator_view(request):
+    # Ensure user has a profile
+    if not hasattr(request.user, 'profile'):
+        UserProfile.objects.create(
+            user=request.user,
+            full_name=f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+        )
+    
     tender_number = None
     error = None
     tender_description = None  # Variable to hold the description
@@ -21,6 +57,9 @@ def tender_generator_view(request):
             category_code = request.POST.get("category_code")
             procurement_type = request.POST.get("procurement_type")
             tender_description = request.POST.get("tender_description")  # Get the description field
+            lot_number = request.POST.get("lot_number")
+            amendment_number = request.POST.get("amendment_number")
+            call_off_number = request.POST.get("call_off_number")
 
             # Check if inputs are missing or invalid
             if not department_code or not category_code or not procurement_type:
@@ -41,7 +80,10 @@ def tender_generator_view(request):
 
             # Generate the tender number
             sequential_number = f"{tracker.last_sequence:04}"  # Zero-padded to 4 digits
-            tender_number = f"{prefix}/{department_code}/{year}/{category_code}/{procurement_type}-{sequential_number}"
+            lot_suffix = f" ({int(lot_number):02d})" if lot_number else ""
+            amendment_suffix = f" (A{amendment_number})" if amendment_number else ""
+            call_off_suffix = f" (CO{call_off_number})" if call_off_number else ""
+            tender_number = f"{prefix}/{department_code}/{year}/{category_code}/{procurement_type}-{sequential_number}{lot_suffix}{amendment_suffix}{call_off_suffix}"
 
             # Save Tender into the database
             department = Department.objects.get(code=department_code)
@@ -53,8 +95,16 @@ def tender_generator_view(request):
                 department=department,
                 user=request.user  # Automatically assign logged-in user
             )
+            messages.success(request, f'Tender {tender_number} created successfully!')
 
+        except Department.DoesNotExist:
+            messages.error(request, 'Invalid department code selected.')
+            error = "Invalid department code"
+        except Category.DoesNotExist:
+            messages.error(request, 'Invalid category code selected.')
+            error = "Invalid category code"
         except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
             error = str(e)
 
     # Fetch department codes for the dropdown
@@ -65,6 +115,14 @@ def tender_generator_view(request):
     # Fetch tenders, ordered by most recent
     tenders = Tender.objects.all().order_by('-created_at')
 
+    # Add pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(tenders, 10)  # Show 10 tenders per page
+    try:
+        tenders = paginator.page(page)
+    except:
+        tenders = paginator.page(1)
+
     return render(request, "tender_generator.html", {
         "tender_number": tender_number,
         "error": error,
@@ -72,39 +130,401 @@ def tender_generator_view(request):
         "tender_description": tender_description,  # Pass the description to the template
         "category_data": category_data,
         "tenders": tenders,  # Pass tenders to the template
+        "is_paginated": True if tenders.has_other_pages() else False,
     })
+
+class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ("username", "email", "password1", "password2")
 
 # Register view
 def register_view(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)  # Use the updated form
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            raw_password = form.cleaned_data.get('password1')
-            user = authenticate(username=username, password=raw_password)
-            login(request, user)
-            return redirect('tender_generator')  # Redirect to tender generator after registration
+            user = form.save()
+            messages.success(request, 'Account created successfully!')
+            return redirect('login')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = CustomUserCreationForm()
     return render(request, 'register.html', {'form': form})
 
 # Login view
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('tender-generator')
+        
     if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
+        form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect('tender_generator')  # Redirect to a 'home' page after successful login
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                next_url = request.GET.get('next', reverse('tender-generator'))
+                return redirect(next_url)
+            else:
+                messages.error(request, 'Invalid username or password.')
     else:
         form = AuthenticationForm()
+    
     return render(request, 'login.html', {'form': form})
 
 # Home view (after login)
 def home_view(request):
-    return render(request, 'home.html')  # Create this template for your homepage
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return redirect('login')
 
+@login_required
 def tender_activity_view(request):
-    tenders = Tender.objects.all().order_by('-created_at')  # Fetch tenders, most recent first
-    return render(request, 'tender_activity.html', {"tenders": tenders})
+    search_query = request.GET.get('search', '')
+    
+    tenders = Tender.objects.all()
+    if search_query:
+        tenders = tenders.filter(
+            Q(tender_number__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(department__name__icontains=search_query)
+        )
+    
+    tenders = tenders.order_by('-created_at')
+    
+    # Add pagination here too
+    paginator = Paginator(tenders, 10)
+    page = request.GET.get('page')
+    tenders = paginator.get_page(page)
+    
+    return render(request, 'tender_activity.html', {
+        "tenders": tenders,
+        "search_query": search_query
+    })
+
+@login_required
+def tender_list_view(request):
+    search_query = request.GET.get('search', '')
+    
+    tenders = Tender.objects.all()
+    if search_query:
+        tenders = tenders.filter(
+            Q(tender_number__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(department__name__icontains=search_query)
+        )
+    
+    tenders = tenders.order_by('-created_at')
+    
+    paginator = Paginator(tenders, 10)
+    page = request.GET.get('page')
+    tenders = paginator.get_page(page)
+    
+    return render(request, 'tender_list.html', {
+        'tenders': tenders,
+        'search_query': search_query
+    })
+
+@login_required
+def tender_update_view(request, tender_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    
+    if request.method == 'POST':
+        # Update tender with form data
+        tender.category = request.POST.get('category')
+        tender.status = request.POST.get('status')
+        tender.invitation_date = request.POST.get('invitation_date') or None
+        tender.closing_date = request.POST.get('closing_date') or None
+        tender.evaluation_date = request.POST.get('evaluation_date') or None
+        tender.contract_date = request.POST.get('contract_date') or None
+        tender.currency = request.POST.get('currency')
+        tender.contract_amount = request.POST.get('contract_amount') or None
+        tender.vendor_name = request.POST.get('vendor_name')
+        # Update other fields similarly...
+        
+        tender.save()
+        messages.success(request, 'Tender details updated successfully.')
+        
+    return redirect('tender-list')
+
+@login_required
+def export_tenders_view(request):
+    # Create workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tender List"
+
+    # Define headers and styles
+    headers = [
+        'Tender Number',
+        'Description',
+        'Department',
+        'Category',
+        'Status',
+        'Officer',
+        'Invitation Date',
+        'Closing Date',
+        'Evaluation Date',
+        'Contract Date',
+        'Currency',
+        'Contract Amount',
+        'Vendor/Consultant',
+        'PO Number',
+        'PO Date',
+        'SRA Number',
+        'SRA Date',
+        'Payment Amount',
+        'File Name',
+        'File Number',
+        'Created Date'
+    ]
+
+    # Style headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4A90E2", end_color="4A90E2", fill_type="solid")
+    
+    # Write headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+
+    # Get all tenders
+    tenders = Tender.objects.all().order_by('-created_at')
+
+    # Write data with timezone handling
+    for row, tender in enumerate(tenders, 2):
+        ws.cell(row=row, column=1, value=tender.tender_number)
+        ws.cell(row=row, column=2, value=tender.description)
+        ws.cell(row=row, column=3, value=tender.department.name)
+        ws.cell(row=row, column=4, value=tender.category)
+        ws.cell(row=row, column=5, value=tender.status)
+        
+        try:
+            officer_name = tender.user.profile.full_name
+        except:
+            officer_name = tender.user.get_full_name() or tender.user.username
+        
+        ws.cell(row=row, column=6, value=officer_name)
+        
+        # Handle dates with timezone conversion
+        date_fields = [
+            tender.invitation_date,
+            tender.closing_date,
+            tender.evaluation_date,
+            tender.contract_date,
+            tender.po_date,
+            tender.sra_date,
+            tender.payment_memo_date
+        ]
+        
+        for col, date in enumerate(date_fields, 7):
+            if date:
+                # Date fields don't need timezone handling as they're already timezone-naive
+                ws.cell(row=row, column=col, value=date)
+
+        # Handle numeric and text fields
+        ws.cell(row=row, column=11, value=tender.currency)
+        ws.cell(row=row, column=12, value=tender.contract_amount)
+        ws.cell(row=row, column=13, value=tender.vendor_name)
+        ws.cell(row=row, column=14, value=tender.po_number)
+        ws.cell(row=row, column=16, value=tender.sra_number)
+        ws.cell(row=row, column=18, value=tender.payment_amount)
+        ws.cell(row=row, column=19, value=tender.file_name)
+        ws.cell(row=row, column=20, value=tender.file_number)
+
+        # Handle created_at datetime with timezone conversion
+        if tender.created_at.tzinfo:
+            created_at = tender.created_at.astimezone(timezone.utc).replace(tzinfo=None)
+        else:
+            created_at = tender.created_at
+
+        ws.cell(row=row, column=21, value=created_at)
+
+        # Format the date cell
+        date_cell = ws.cell(row=row, column=21)
+        date_cell.number_format = 'YYYY-MM-DD HH:MM:SS'
+
+    # Adjust column widths
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 15
+
+    # Create response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename=tender_list_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+
+    try:
+        wb.save(response)
+    except Exception as e:
+        messages.error(request, f"Error exporting tenders: {str(e)}")
+        return redirect('tender-list')
+
+    return response
+
+@login_required
+def shop_view(request):
+    breakfast_items = BreakfastItem.objects.filter(available=True)
+    return render(request, 'shop.html', {'breakfast_items': breakfast_items})
+
+@login_required
+def order_list_view(request):
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'order_list.html', {'orders': orders})
+
+@login_required
+def add_to_order_view(request, item_id):
+    if request.method == 'POST':
+        item = get_object_or_404(BreakfastItem, id=item_id)
+        quantity = int(request.POST.get('quantity', 1))
+        
+        # Get or create pending order
+        order, created = Order.objects.get_or_create(
+            user=request.user,
+            status='pending'
+        )
+        
+        # Add item to order
+        OrderItem.objects.create(
+            order=order,
+            item=item,
+            quantity=quantity,
+            price=item.price
+        )
+        
+        # Update total amount
+        order.total_amount = sum(
+            item.price * item.quantity 
+            for item in order.orderitem_set.all()
+        )
+        order.save()
+        
+        messages.success(request, f'{quantity}x {item.name} added to your order!')
+        
+    return redirect('shop')
+
+@login_required
+def iso_generator_view(request, tender_id=None):
+    if tender_id:
+        tender = get_object_or_404(Tender, id=tender_id)
+    else:
+        tender = None
+
+    if request.method == "POST":
+        try:
+            division_code = request.POST.get("division_code")
+            department_code = request.POST.get("department_code")
+            letter_type = request.POST.get("letter_type")
+            tender_id = request.POST.get("tender_id")
+
+            if not all([division_code, department_code, letter_type, tender_id]):
+                raise ValueError("All fields must be provided.")
+
+            tender = get_object_or_404(Tender, id=tender_id)
+            division = get_object_or_404(Division, code=division_code)
+            department = get_object_or_404(Department, code=department_code)
+
+            # Generate ISO number
+            prefix = "FDA"
+            year = datetime.now().year
+            year_short = str(year)[-2:]
+            
+            # Get next sequence number
+            sequence = ISOTracker.get_next_sequence(year)
+            sequence_str = str(sequence).zfill(4)
+
+            iso_number = f"{prefix}/{division.code}/{department.code}/{letter_type}/{year_short}/{sequence_str}"
+
+            # Create ISO number record
+            iso = ISONumber.objects.create(
+                iso_number=iso_number,
+                officer=request.user,
+                tender=tender,
+                division=division,
+                department=department,
+                letter_type=letter_type,
+                description=tender.description
+            )
+
+            messages.success(request, f'ISO Number generated successfully: {iso_number}')
+            return redirect('iso-detail', iso_id=iso.id)
+
+        except Exception as e:
+            messages.error(request, str(e))
+
+    divisions = Division.objects.all()
+    if not divisions.exists():
+        messages.warning(request, "No divisions found. Please add divisions to the database.")
+    
+    context = {
+        'divisions': divisions,
+        'departments': Department.objects.all(),
+        'tender': tender,
+        'tenders': Tender.objects.all() if not tender else None
+    }
+    
+    return render(request, 'iso_generator.html', context)
+
+@login_required
+def iso_detail_view(request, iso_id):
+    iso = get_object_or_404(ISONumber, id=iso_id)
+    return render(request, 'iso_detail.html', {'iso': iso})
+
+@login_required
+def iso_list_view(request):
+    isos = ISONumber.objects.all().order_by('-date_created')
+    search_query = request.GET.get('search', '')
+    
+    if search_query:
+        isos = isos.filter(
+            Q(iso_number__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(division__name__icontains=search_query) |
+            Q(department__name__icontains=search_query)
+        )
+    
+    paginator = Paginator(isos, 10)
+    page = request.GET.get('page')
+    isos = paginator.get_page(page)
+    
+    return render(request, 'iso_list.html', {
+        'isos': isos,
+        'search_query': search_query
+    })
+
+@login_required
+def dashboard_view(request):
+    # Get counts
+    total_tenders = Tender.objects.count()
+    total_isos = ISONumber.objects.count()
+    
+    # Get recent items (last 30 days)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    recent_tenders = Tender.objects.filter(
+        created_at__gte=thirty_days_ago
+    ).order_by('-created_at')[:5]
+    
+    recent_isos = ISONumber.objects.filter(
+        date_created__gte=thirty_days_ago
+    ).order_by('-date_created')[:5]
+    
+    # Get tender statistics by department
+    department_stats = Tender.objects.values('department__name')\
+        .annotate(count=Count('id'))\
+        .order_by('-count')[:5]
+    
+    context = {
+        'total_tenders': total_tenders,
+        'total_isos': total_isos,
+        'recent_tenders': recent_tenders,
+        'recent_isos': recent_isos,
+        'department_stats': department_stats,
+    }
+    
+    return render(request, 'dashboard.html', context)

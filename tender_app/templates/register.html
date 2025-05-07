@@ -1,161 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
 
-    <title>Register</title>
-    <style>
-        /* General Reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
-        }
+{% block title %}Register - Tender Management System{% endblock %}
 
-        body {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f8f9fa;
-            color: #333;
-        }
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
 
-        .container {
-            max-width: 500px;
-            margin-top: 50px;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            color: #2c3e50;
-            margin-bottom: 1rem;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            text-align: left;
-            font-weight: bold;
-            margin: 0.5rem 0 0.3rem;
-            color: #555;
-        }
-
-        input {
-            padding: 0.8rem;
-            font-size: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-
-        input:focus {
-            border-color: #3498db;
-            box-shadow: 0 0 4px rgba(52, 152, 219, 0.5);
-        }
-
-        .form-control:focus {
-            box-shadow: none;
-            border-color: #3498db;
-        }
-
-        button {
-            margin-top: 1.5rem;
-            padding: 0.8rem;
-            font-size: 1rem;
-            background-color: #3498db;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #2980b9;
-        }
-
-        .btn-primary {
-            background-color: #3498db;
-            border-color: #3498db;
-        }
-
-        .btn-primary:hover {
-            background-color: #2980b9;
-            border-color: #2980b9;
-        }
-
-        .error-message {
-            margin-top: 1rem;
-            color: #c62828;
-            font-size: 0.9rem;
-        }
-
-        p {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-        }
-
-        a {
-            color: #3498db;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-
+{% block content %}
+<div class="auth-wrapper">
     <div class="container">
-        <h1 class="text-center">Register</h1>
-        <form method="POST">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="id_full_name" class="form-label">Full Name</label>
-                {{ form.full_name }}
-            </div>
-            <div class="mb-3">
-                <label for="id_username" class="form-label">Username</label>
-                {{ form.username }}
-            </div>
-            <div class="mb-3">
-                <label for="id_email" class="form-label">Email</label>
-                {{ form.email }}
-            </div>
-            <div class="mb-3">
-                <label for="id_password1" class="form-label">Password</label>
-                {{ form.password1 }}
-            </div>
-            <div class="mb-3">
-                <label for="id_password2" class="form-label">Confirm Password</label>
-                {{ form.password2 }}
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Register</button>
-        </form>
-        
-        {% if form.errors %}
-            <div class="error-message">
-                <p>Please correct the errors below.</p>
-            </div>
-        {% endif %}
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h3 class="text-center mb-4">Create Account</h3>
 
-        <p class="text-center">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                        {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        <form method="post" class="w-100" novalidate>
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                                <div class="input-group w-100">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    {% render_field form.username class="form-control" placeholder="Enter username" %}
+                                </div>
+                                {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.username.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                                <div class="input-group w-100">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    {% render_field form.email class="form-control" placeholder="Enter email" %}
+                                </div>
+                                {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
+                                <div class="input-group w-100">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    {% render_field form.password1 class="form-control" placeholder="Enter password" autocomplete="off" %}
+                                </div>
+                                <small class="form-text text-muted">Use at least 8 characters, including letters, numbers, and symbols.</small>
+                                {% if form.password1.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password1.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
+                                <div class="input-group w-100">
+                                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                    {% render_field form.password2 class="form-control" placeholder="Confirm password" autocomplete="off" %}
+                                </div>
+                                {% if form.password2.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password2.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 mb-3" id="submit-btn">Register</button>
+                        </form>
+                        
+                        <div class="text-center">
+                            <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+
+<script>
+    document.querySelector('form').addEventListener('submit', function(event) {
+        var submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Registering...';
+
+        setTimeout(() => {
+            if (document.querySelector('.invalid-feedback.d-block')) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Register';
+            }
+        }, 500);
+    });
+</script>
+{% endblock %}

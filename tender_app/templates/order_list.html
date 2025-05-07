@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Orders - TMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Orders</h2>
+        <a href="{% url 'shop' %}" class="btn btn-primary">
+            <i class="bi bi-shop"></i> Back to Shop
+        </a>
+    </div>
+
+    {% if orders %}
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Order #</th>
+                        <th>Items</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>
+                            {% for item in order.orderitem_set.all %}
+                            {{ item.quantity }}x {{ item.item.name }}<br>
+                            {% endfor %}
+                        </td>
+                        <td>GHS {{ order.total_amount }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if order.status == 'completed' %}bg-success
+                                {% elif order.status == 'processing' %}bg-warning
+                                {% elif order.status == 'cancelled' %}bg-danger
+                                {% else %}bg-info{% endif %}">
+                                {{ order.status|title }}
+                            </span>
+                        </td>
+                        <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <p class="text-muted">You haven't placed any orders yet.</p>
+        <a href="{% url 'shop' %}" class="btn btn-primary">
+            <i class="bi bi-shop"></i> Browse Shop
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

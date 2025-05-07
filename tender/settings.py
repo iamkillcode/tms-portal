@@ -21,12 +21,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-sg4h!aup76h7^=ne+8b5!#c!+*s**cmon0vw0gv*o+ufp144&3'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True  # Temporarily set to True for development
 
-# ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.90.91']
 ALLOWED_HOSTS = ['*']
 
 
@@ -40,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'widget_tweaks',  # Add this line
     'tender_app',
 ]
 
@@ -62,7 +62,10 @@ ROOT_URLCONF = 'tender.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates',],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+            os.path.join(BASE_DIR, 'tender_app', 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -78,10 +81,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'tender.wsgi.application'
 
 
-LOGIN_URL = '/login/'  # Replace with your actual login URL
-LOGIN_REDIRECT_URL = '/tender-generator/'  # Where to redirect after login
-LOGOUT_REDIRECT_URL = '/login/'  # Redirect here after logout
-
+# Authentication settings
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'tender-generator'
+LOGOUT_REDIRECT_URL = 'login'
 
 
 # Database
@@ -119,7 +122,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Accra'  # For Ghana
 
 USE_I18N = True
 
@@ -130,15 +133,27 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-GRAPPELLI_ADMIN_TITLE = "Tender Number Generator Admin"
-
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    os.path.join(BASE_DIR, 'static')
 ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Media files (Uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+GRAPPELLI_ADMIN_TITLE = "Tender Number Generator Admin"
+GRAPPELLI_SWITCH_USER = True
+
+# Ensure message framework is configured
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Maximum upload size (5MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
