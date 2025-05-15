@@ -1,5 +1,18 @@
 from django.contrib import admin
 from .models import TenderTracker, Department, Tender, Category, UserProfile, BreakfastItem, Order, OrderItem, Division, ISOTracker, ISONumber
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+
+class CustomUserAdmin(UserAdmin):
+    actions = ['delete_selected']
+    
+    def has_delete_permission(self, request, obj=None):
+        # Only superusers can delete users
+        return request.user.is_superuser
+
+# Unregister the default UserAdmin and register our custom one
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
 
 # Register TenderTracker model
 @admin.register(TenderTracker)

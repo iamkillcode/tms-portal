@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tender Details - {{ tender.tender_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Tender Header -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">{{ tender.tender_number }}</h2>
+            <span class="badge bg-light text-dark">{{ tender.status }}</span>
+        </div>
+        <div class="card-body">
+            <!-- Tender Details -->
+            <div class="row">
+                <div class="col-md-8">
+                    <h5>Description</h5>
+                    <p>{{ tender.description }}</p>
+                    
+                    <h5>Client Information</h5>
+                    <p><strong>Client:</strong> {{ tender.client_name }}</p>
+                    <p><strong>Contact:</strong> {{ tender.client_contact }}</p>
+                    
+                    <h5>Project Details</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Created:</strong> {{ tender.created_at|date:"F d, Y" }}</li>
+                        <li><strong>Due Date:</strong> {{ tender.due_date|date:"F d, Y" }}</li>
+                        <li><strong>Value:</strong> ${{ tender.estimated_value|floatformat:2 }}</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'tender-update' tender.id %}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit Tender
+                        </a>
+                        <a href="{% url 'iso-generator-for-tender' tender.id %}" class="btn btn-info">
+                            <i class="fas fa-file-alt"></i> Generate ISO
+                        </a>
+                        <a href="{% url 'tender-list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Section -->
+            {% if tender.documents.all %}
+            <div class="mt-4">
+                <h5>Attached Documents</h5>
+                <div class="list-group">
+                    {% for doc in tender.documents.all %}
+                    <a href="{{ doc.file.url }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file"></i> {{ doc.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

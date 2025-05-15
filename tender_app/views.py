@@ -24,6 +24,8 @@ from .models import ISONumber, ISOTracker, Division
 from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
+from django.views.generic import DetailView
+from .models import Tender
 
 # def create_missing_profiles():
 #     for user in User.objects.all():
@@ -528,3 +530,8 @@ def dashboard_view(request):
     }
     
     return render(request, 'dashboard.html', context)
+
+class TenderDetailView(DetailView):
+    model = Tender
+    template_name = 'tender_app/tender_detail.html'
+    context_object_name = 'tender'

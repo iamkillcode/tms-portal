@@ -19,6 +19,7 @@ urlpatterns = [
         path('<int:tender_id>/update/', views.tender_update_view, name='tender-update'),
         path('export/', views.export_tenders_view, name='export-tenders'),
     ])),
+    path('tender/<int:pk>/', views.TenderDetailView.as_view(), name='tender-detail'),
     
     # Shop URLs
     path('shop/', views.shop_view, name='shop'),

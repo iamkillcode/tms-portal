@@ -5,10 +5,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('grappelli/', include('grappelli.urls')),
+    # path('grappelli/', include('grappelli.urls')),
     path('admin/', admin.site.urls),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('', include('tender_app.urls')),  # Include app URLs at root
+    # path('tender/<int:pk>/', views.TenderDetailView.as_view(), name='tender-detail'),
 ]
 
 if settings.DEBUG:
