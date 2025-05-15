@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Register - Tender Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h3 class="text-center mb-4">Create Account</h3>
+
+                        {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        <form method="post" class="w-100" novalidate>
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                                <div class="input-group w-100">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    {% render_field form.username class="form-control" placeholder="Enter username" %}
+                                </div>
+                                {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.username.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                                <div class="input-group w-100">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    {% render_field form.email class="form-control" placeholder="Enter email" %}
+                                </div>
+                                {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
+                                <div class="input-group w-100">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    {% render_field form.password1 class="form-control" placeholder="Enter password" autocomplete="off" %}
+                                </div>
+                                <small class="form-text text-muted">Use at least 8 characters, including letters, numbers, and symbols.</small>
+                                {% if form.password1.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password1.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
+                                <div class="input-group w-100">
+                                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                    {% render_field form.password2 class="form-control" placeholder="Confirm password" autocomplete="off" %}
+                                </div>
+                                {% if form.password2.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password2.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 mb-3" id="submit-btn">Register</button>
+                        </form>
+                        
+                        <div class="text-center">
+                            <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelector('form').addEventListener('submit', function(event) {
+        var submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Registering...';
+
+        setTimeout(() => {
+            if (document.querySelector('.invalid-feedback.d-block')) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Register';
+            }
+        }, 500);
+    });
+</script>
+{% endblock %}

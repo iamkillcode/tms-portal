@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generate Tender - TMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'css/tender.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container tender-form-container">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <h2 class="card-title text-center mb-4">Generate Tender Number</h2>
+
+            {% if tender_number %}
+            <div class="generated-number">
+                <h5 class="mb-2">Generated Successfully</h5>
+                <p class="mb-0"><strong>Tender Number:</strong> {{ tender_number }}</p>
+                {% if tender_description %}
+                <p class="mb-0 mt-2"><strong>Description:</strong> {{ tender_description }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <form method="POST" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="department_code" class="form-label">Department Code</label>
+                    <select class="form-select" id="department_code" name="department_code" required>
+                        <option value="" disabled selected>Select Department</option>
+                        {% for code in department_codes %}
+                        <option value="{{ code }}">{{ code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="tender_description" class="form-label">Tender Description</label>
+                    <textarea class="form-control" id="tender_description" name="tender_description" 
+                              rows="3" required placeholder="Enter tender description"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="category_code" class="form-label">Category</label>
+                    <select class="form-select" id="category_code" name="category_code" required>
+                        <option value="" disabled selected>Select Category</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="procurement_type" class="form-label">Procurement Type</label>
+                    <input type="text" class="form-control" id="procurement_type" 
+                           name="procurement_type" placeholder="e.g., SIS" required>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label for="lot_number" class="form-label">Lot Number</label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="lot_number" 
+                               name="lot_number" 
+                               min="1"
+                               max="99"
+                               placeholder="00" 
+                               pattern="\d{1,2}">
+                        <div class="form-text">Enter a number (1-99)</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="amendment_number" class="form-label">Amendment Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text">A</span>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="amendment_number" 
+                                   name="amendment_number"
+                                   min="1"
+                                   max="99"
+                                   placeholder="0">
+                        </div>
+                        <div class="form-text">Enter a number (1-99)</div>
+                    </div>
+                
+                    <div class="col-md-4">
+                        <label for="call_off_number" class="form-label">Call Off Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text">CO</span>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="call_off_number" 
+                                   name="call_off_number"
+                                   min="1"
+                                   max="99"
+                                   placeholder="0">
+                        </div>
+                        <div class="form-text">Enter a number (1-99)</div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary py-2">Generate Tender Number</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#category_code').select2({
+            placeholder: 'Select a Category',
+            data: {{ category_data|safe }}
+        });
+
+        // Form validation
+        $('.needs-validation').on('submit', function(event) {
+            if (!this.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            $(this).addClass('was-validated');
+        });
+
+        // Validate number inputs
+        $('input[type="number"]').on('input', function() {
+            let val = $(this).val();
+            let min = parseInt($(this).attr('min'));
+            let max = parseInt($(this).attr('max'));
+            
+            if (val !== '') {
+                val = parseInt(val);
+                if (val < min) $(this).val(min);
+                if (val > max) $(this).val(max);
+            }
+        });
+    });
+</script>
+{% endblock %}

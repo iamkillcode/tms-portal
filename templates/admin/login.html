@@ -1,0 +1,33 @@
+{% comment %} {% extends "grappelli/base.html" %} {% endcomment %}
+
+{% load static %}
+
+
+    <link rel="stylesheet" href="{% static 'css/admin-login.css' %}">
+
+    <div class="admin-login-logo">
+        <h1>Tender Number Admin</h1>
+    </div>
+
+{% block content %}
+    <div class="login-container">
+        <div class="login-form">
+            <h2>Login to Admin</h2>
+            <form method="post" action="{% url 'admin:login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_username">Username:</label>
+                    {{ form.username }}
+                </div>
+                <div class="form-group">
+                    <label for="id_password">Password:</label>
+                    {{ form.password }}
+                </div>
+                <button type="submit" class="btn btn-primary">Log In</button>
+            </form>
+            <p class="forgot-password">
+                <a href="#">Forgot your password?</a>
+            </p>
+        </div>
+    </div>
+{% endblock %}

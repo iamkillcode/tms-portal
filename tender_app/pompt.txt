@@ -1,0 +1,95 @@
+# Project: Tender Management System
+
+Create a Django-based procurement tender management system with the following specifications:
+
+## Core Features
+1. Tender number generation and tracking
+2. User authentication with profiles
+3. Department and category management 
+4. Export capabilities to Excel
+5. Breakfast order management subsystem
+
+## Models Required
+
+### 1. TenderTracker
+- Year-based sequence tracking
+- Automatic increment functionality
+- Unique year constraint
+
+### 2. Department
+- Code (unique)
+- Name
+
+### 3. Tender
+- Number (unique, formatted as FDA/DEPT/YEAR/CATEGORY/TYPE-SEQUENCE)
+- Department (ForeignKey)
+- Category choices (Goods, Technical Service, Consultancy, Works)
+- Status tracking (In Progress, Completed)
+- Currency options (GHS, USD, EUR)
+- Dates (invitation, closing, evaluation, contract)
+- Financial tracking (contract amount, payment amount)
+- Document tracking (file name, file number)
+- Officer assignment (User ForeignKey)
+
+### 4. UserProfile
+- Extended User model
+- Full name handling
+- Auto-creation on user registration
+
+### 5. Category
+- Code (unique)
+- Name
+- Excel import functionality
+
+### 6. Additional Features
+- ISO number tracking system
+- Division management
+- Breakfast ordering subsystem
+
+## Technical Requirements
+
+1. Django 5.1.4+
+2. PostgreSQL/SQLite database
+3. openpyxl for Excel operations
+4. Authentication middleware
+5. Static file handling
+6. Form validation
+7. Pagination support
+8. Message framework integration
+
+## Security Features
+- Login required decorators
+- CSRF protection
+- User authorization checks
+- Form validation
+- Secure password handling
+
+## Views Required
+1. Tender generation
+2. Tender listing
+3. Tender updates
+4. Export functionality
+5. User authentication
+6. Profile management
+7. Order management
+
+## Templates
+1. Base template
+2. Authentication templates
+3. Tender management templates
+4. Admin customization
+
+## Static Files
+1. CSS (admin-login, auth, main, tender)
+2. JavaScript utilities
+3. Image handling
+
+## Admin Interface
+1. Custom admin views
+2. List displays
+3. Search fields
+4. Filters
+5. Read-only fields
+6. Custom admin titles
+
+The system should follow Django best practices, implement proper error handling, and include necessary migrations for database setup.
