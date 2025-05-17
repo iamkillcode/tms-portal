@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Reports & Analytics</h2>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">Total Tenders</h6>
+                            <h2 class="mt-2 mb-0">{{ total_tenders }}</h2>
+                        </div>
+                        <i class="bi bi-file-earmark-text text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">Total ISO Numbers</h6>
+                            <h2 class="mt-2 mb-0">{{ total_isos }}</h2>
+                        </div>
+                        <i class="bi bi-file-earmark-code text-success" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">Completed Tenders</h6>
+                            <h2 class="mt-2 mb-0">{{ completed_tenders }}</h2>
+                        </div>
+                        <i class="bi bi-check-circle text-info" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Department Stats -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tenders by Department</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for stat in department_stats %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ stat.department__name }}</h6>
+                                <span class="badge bg-primary rounded-pill">{{ stat.count }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No department statistics available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Stats -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tenders by Category</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for stat in category_stats %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ stat.category }}</h6>
+                                <span class="badge bg-success rounded-pill">{{ stat.count }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No category statistics available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Division Stats -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">ISOs by Division</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for stat in division_stats %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ stat.division__name }}</h6>
+                                <span class="badge bg-warning rounded-pill">{{ stat.count }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No division statistics available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Trends -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Monthly Tender Trends</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for stat in monthly_tenders %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    {% with stat.month|stringformat:"i" as month_number %}
+                                    {{ month_number|date:"F"|default:month_number }}
+                                    {% endwith %}
+                                </h6>
+                                <span class="badge bg-info rounded-pill">{{ stat.count }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No monthly statistics available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

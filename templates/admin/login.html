@@ -1,33 +1,97 @@
-{% comment %} {% extends "grappelli/base.html" %} {% endcomment %}
+{% extends "admin/base.html" %}
+{% load i18n static %}
 
-{% load static %}
+{% block extrastyle %}
+<link rel="stylesheet" href="{% static 'admin/css/login.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin-login.css' %}">
+<style>
+    body.login {
+        background: #f8f9fa;
+    }
+    .login #header {
+        background: #2c3e50;
+        color: white;
+        text-align: center;
+        padding: 15px 0;
+        margin-bottom: 20px;
+    }
+    .login #container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        margin: 60px auto;
+        max-width: 400px;
+        padding: 30px;
+    }
+    .login .form-row {
+        margin-bottom: 20px;
+    }
+    .login .form-row input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .submit-row {
+        text-align: center;
+    }
+    .submit-row input {
+        background: #2c3e50;
+        color: white;
+        border: none;
+        padding: 10px 30px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .submit-row input:hover {
+        background: #34495e;
+    }
+</style>
+{% endblock %}
 
+{% block bodyclass %}login{% endblock %}
 
-    <link rel="stylesheet" href="{% static 'css/admin-login.css' %}">
-
-    <div class="admin-login-logo">
-        <h1>Tender Number Admin</h1>
-    </div>
+{% block nav-global %}{% endblock %}
 
 {% block content %}
-    <div class="login-container">
-        <div class="login-form">
-            <h2>Login to Admin</h2>
-            <form method="post" action="{% url 'admin:login' %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="id_username">Username:</label>
-                    {{ form.username }}
-                </div>
-                <div class="form-group">
-                    <label for="id_password">Password:</label>
-                    {{ form.password }}
-                </div>
-                <button type="submit" class="btn btn-primary">Log In</button>
-            </form>
-            <p class="forgot-password">
-                <a href="#">Forgot your password?</a>
-            </p>
-        </div>
+<div id="container">
+    <div id="header">
+        <h1>{{ site_header|default:_('Tender Management Admin') }}</h1>
     </div>
+
+    <div id="content">
+        {% if form.errors and not form.non_field_errors %}
+        <p class="errornote">
+            {% if form.errors.items|length == 1 %}
+            {% translate "Please correct the error below." %}
+            {% else %}
+            {% translate "Please correct the errors below." %}
+            {% endif %}
+        </p>
+        {% endif %}
+
+        {% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}
+        <p class="errornote">{{ error }}</p>
+        {% endfor %}
+        {% endif %}
+
+        <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+            <div class="form-row">
+                {{ form.username.errors }}
+                <label for="id_username">{{ form.username.label }}:</label>
+                {{ form.username }}
+            </div>
+            <div class="form-row">
+                {{ form.password.errors }}
+                <label for="id_password">{{ form.password.label }}:</label>
+                {{ form.password }}
+                <input type="hidden" name="next" value="{{ next }}">
+            </div>
+            <div class="submit-row">
+                <input type="submit" value="{% translate 'Log in' %}">
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

@@ -39,7 +39,7 @@
                     <td>{{ iso.department.name }}</td>
                     <td>{{ iso.letter_type }}</td>
                     <td>{{ iso.officer.get_full_name }}</td>
-                    <td>{{ iso.date_created|date:"Y-m-d H:i" }}</td>
+                    <td>{{ iso.date_created|date:"Y-m-d" }}</td>
                     <td>
                         <a href="{% url 'iso-detail' iso.id %}" class="btn btn-sm btn-info">
                             <i class="bi bi-eye"></i> View

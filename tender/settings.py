@@ -59,6 +59,11 @@ ROOT_URLCONF = 'tender.urls'
 # LOGIN_TEMPLATE = 'admin/login.html'
 
 
+# Authentication settings
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -73,18 +78,13 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.static',
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'tender.wsgi.application'
-
-
-# Authentication settings
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'tender-generator'
-LOGOUT_REDIRECT_URL = 'login'
 
 
 # Database
@@ -142,8 +142,22 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-GRAPPELLI_ADMIN_TITLE = "Tender Number Generator Admin"
-GRAPPELLI_SWITCH_USER = True
+# Admin site customization
+ADMIN_SITE_HEADER = "Tender Management System"
+ADMIN_SITE_TITLE = "Tender Management Admin"
+ADMIN_INDEX_TITLE = "Dashboard"
+
+# Grappelli settings
+GRAPPELLI_ADMIN_TITLE = "Tender Management System"
+
+GRAPPELLI_AUTOCOMPLETE_SEARCH_FIELDS = {
+    "tender_app": {
+        "department": ("code__icontains", "name__icontains"),
+        "division": ("code__icontains", "name__icontains"),
+        "userprofile": ("full_name__icontains",),
+        "breakfastitem": ("name__icontains",),
+    }
+}
 
 # Ensure message framework is configured
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
@@ -157,3 +171,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Maximum upload size (5MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
+
+# Security Settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+CSRF_COOKIE_SECURE = True  # for HTTPS sites
+SESSION_COOKIE_SECURE = True  # for HTTPS sites
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Email settings (update these with your email configuration)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # for development
+DEFAULT_FROM_EMAIL = 'noreply@example.com'
+SERVER_EMAIL = 'server@example.com'

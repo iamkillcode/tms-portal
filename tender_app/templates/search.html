@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Search</h2>
+
+    <!-- Search Form -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="mb-0">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Search tenders and ISOs..." 
+                           value="{{ search_query }}" autofocus>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if search_query %}
+    <!-- Tenders Results -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Tender Results</h5>
+        </div>
+        <div class="card-body">
+            {% if tenders %}
+            <div class="list-group list-group-flush">
+                {% for tender in tenders %}
+                <a href="{% url 'tender-update' tender.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ tender.tender_number }}</h6>
+                        <small class="text-muted">{{ tender.created_at|date:"M d, Y" }}</small>
+                    </div>
+                    <p class="mb-1">{{ tender.description }}</p>
+                    <small class="text-muted">
+                        Department: {{ tender.department.name }} | Category: {{ tender.category }}
+                    </small>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No tenders found matching your search.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ISO Results -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="card-title mb-0">ISO Results</h5>
+        </div>
+        <div class="card-body">
+            {% if isos %}
+            <div class="list-group list-group-flush">
+                {% for iso in isos %}
+                <a href="{% url 'iso-detail' iso.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ iso.iso_number }}</h6>
+                        <small class="text-muted">{{ iso.date_created|date:"M d, Y" }}</small>
+                    </div>
+                    <p class="mb-1">{{ iso.description }}</p>
+                    <small class="text-muted">
+                        Division: {{ iso.division.name }} | Department: {{ iso.department.name }}
+                    </small>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No ISO numbers found matching your search.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center text-muted mt-5">
+        <i class="bi bi-search" style="font-size: 3rem;"></i>
+        <p class="mt-3">Enter your search query above to find tenders and ISO numbers.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

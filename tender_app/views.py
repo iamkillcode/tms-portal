@@ -11,7 +11,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django import forms
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.db.models.functions import ExtractMonth
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -21,7 +22,6 @@ from django.utils import timezone as django_timezone  # For Django's timezone ut
 from .models import BreakfastItem, Order, OrderItem
 from django.urls import reverse
 from .models import ISONumber, ISOTracker, Division
-from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
 from django.views.generic import DetailView
@@ -159,7 +159,7 @@ def register_view(request):
 # Login view
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('tender-generator')
+        return redirect('dashboard')
         
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -169,7 +169,7 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                next_url = request.GET.get('next', reverse('tender-generator'))
+                next_url = request.GET.get('next', reverse('dashboard'))
                 return redirect(next_url)
             else:
                 messages.error(request, 'Invalid username or password.')
@@ -535,3 +535,71 @@ class TenderDetailView(DetailView):
     model = Tender
     template_name = 'tender_app/tender_detail.html'
     context_object_name = 'tender'
+
+@login_required
+def search_view(request):
+    search_query = request.GET.get('search', '')
+    
+    tenders = []
+    isos = []
+    
+    if search_query:
+        tenders = Tender.objects.filter(
+            Q(tender_number__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(department__name__icontains=search_query) |
+            Q(category__icontains=search_query)
+        ).order_by('-created_at')
+        
+        isos = ISONumber.objects.filter(
+            Q(iso_number__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(division__name__icontains=search_query) |
+            Q(department__name__icontains=search_query)
+        ).order_by('-date_created')
+    
+    return render(request, 'search.html', {
+        'search_query': search_query,
+        'tenders': tenders,
+        'isos': isos
+    })
+
+@login_required
+def reports_view(request):
+    # Get overall statistics
+    total_tenders = Tender.objects.count()
+    total_isos = ISONumber.objects.count()
+    completed_tenders = Tender.objects.filter(status='Completed').count()
+    
+    # Get tender statistics by department
+    department_stats = Tender.objects.values('department__name')\
+        .annotate(count=Count('id'))\
+        .order_by('-count')
+    
+    # Get tender statistics by category
+    category_stats = Tender.objects.values('category')\
+        .annotate(count=Count('id'))\
+        .order_by('-count')
+    
+    # Get ISO statistics by division
+    division_stats = ISONumber.objects.values('division__name')\
+        .annotate(count=Count('id'))\
+        .order_by('-count')
+    
+    # Get monthly trends (last 12 months)
+    twelve_months_ago = timezone.now() - timedelta(days=365)
+    monthly_tenders = Tender.objects.filter(created_at__gte=twelve_months_ago)\
+        .annotate(month=ExtractMonth('created_at'))\
+        .values('month')\
+        .annotate(count=Count('id'))\
+        .order_by('month')
+    
+    return render(request, 'reports.html', {
+        'total_tenders': total_tenders,
+        'total_isos': total_isos,
+        'completed_tenders': completed_tenders,
+        'department_stats': department_stats,
+        'category_stats': category_stats,
+        'division_stats': division_stats,
+        'monthly_tenders': monthly_tenders,
+    })
