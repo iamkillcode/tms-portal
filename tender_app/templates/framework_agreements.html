@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Framework Agreements - {{ tender.tender_number }} - TMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'tender-list' %}">Tenders</a></li>
+            <li class="breadcrumb-item active">Framework Agreements</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Framework Agreements</h2>
+            <p class="text-muted mb-0">{{ tender.tender_number }} - {{ tender.description }}</p>
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Active Agreements</h6>
+                    <h2 class="mb-0">{{ agreements.active.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">Expiring Soon</h6>
+                    <h2 class="mb-0">{{ agreements.expiring_soon.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Expired</h6>
+                    <h2 class="mb-0">{{ agreements.expired.count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Agreement Form -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Add New Framework Agreement</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="vendor" class="form-label">Vendor</label>
+                            <select class="form-select" id="vendor" name="vendor" required>
+                                <option value="">Select Vendor</option>
+                                {% for vendor in winning_vendors %}
+                                <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="agreement_number" class="form-label">Agreement Number</label>
+                            <input type="text" class="form-control" id="agreement_number" name="agreement_number" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="active">Active</option>
+                                <option value="expired">Expired</option>
+                                <option value="terminated">Terminated</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="terms_conditions" class="form-label">Terms and Conditions</label>
+                            <textarea class="form-control" id="terms_conditions" name="terms_conditions" rows="4" required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Agreement</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Agreements List -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Active Agreements</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Agreement Number</th>
+                            <th>Vendor</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for agreement in agreements %}
+                        <tr>
+                            <td>{{ agreement.agreement_number }}</td>
+                            <td>{{ agreement.vendor.name }}</td>
+                            <td>{{ agreement.start_date }}</td>
+                            <td>{{ agreement.end_date }}</td>                            <td>
+                                <div>
+                                    <span class="badge {% if agreement.status == 'active' %}bg-success
+                                                      {% elif agreement.status == 'expired' %}bg-warning
+                                                      {% else %}bg-danger{% endif %}">
+                                        {{ agreement.status|title }}
+                                    </span>
+                                    {% if agreement.days_until_expiry <= 30 and agreement.status == 'active' %}
+                                        <span class="badge bg-warning ms-1">
+                                            Expires in {{ agreement.days_until_expiry }} days
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% if agreement.status != 'active' %}
+                                    <small class="text-muted">
+                                        {% if agreement.status == 'expired' %}
+                                            Expired {{ agreement.end_date|timesince }} ago
+                                        {% else %}
+                                            Terminated on {{ agreement.updated_at|date:"Y-m-d" }}
+                                        {% endif %}
+                                    </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-warning" 
+                                        data-bs-toggle="modal" data-bs-target="#editAgreement{{ agreement.id }}">
+                                    Edit
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No agreements created yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Agreement Modals -->
+{% for agreement in agreements %}
+<div class="modal fade" id="editAgreement{{ agreement.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'edit-framework-agreement' tender.id agreement.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Agreement - {{ agreement.agreement_number }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control" 
+                                   value="{{ agreement.start_date|date:'Y-m-d' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="end_date" class="form-control" 
+                                   value="{{ agreement.end_date|date:'Y-m-d' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="active" {% if agreement.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="expired" {% if agreement.status == 'expired' %}selected{% endif %}>Expired</option>
+                                <option value="terminated" {% if agreement.status == 'terminated' %}selected{% endif %}>Terminated</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Terms and Conditions</label>
+                            <textarea name="terms_conditions" class="form-control" rows="4" required>{{ agreement.terms_conditions }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

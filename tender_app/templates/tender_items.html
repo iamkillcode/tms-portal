@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Tender Items - {{ tender.tender_number }}</h2>
+    <h4 class="text-muted">{{ tender.description }}</h4>
+
+    <!-- Add New Item Form -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Add New Item</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="item_name" class="form-label">Item Name</label>
+                            <input type="text" class="form-control" id="item_name" name="item_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" step="0.01" class="form-control" id="quantity" name="quantity" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="unit_of_measure" class="form-label">Unit of Measure</label>
+                            <input type="text" class="form-control" id="unit_of_measure" name="unit_of_measure" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="brand" class="form-label">Brand</label>
+                            <input type="text" class="form-control" id="brand" name="brand">
+                        </div>
+                        <div class="mb-3">
+                            <label for="manufacturer" class="form-label">Manufacturer</label>
+                            <input type="text" class="form-control" id="manufacturer" name="manufacturer">
+                        </div>
+                        <div class="mb-3">
+                            <label for="specifications" class="form-label">Specifications</label>
+                            <textarea class="form-control" id="specifications" name="specifications" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Item</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Items List -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Items List</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>Brand</th>
+                            <th>Manufacturer</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}                        <tr>
+                            <td>{{ item.item_name }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.unit_of_measure }}</td>
+                            <td>{{ item.brand|default:'-' }}</td>
+                            <td>{{ item.manufacturer|default:'-' }}</td>
+                            <td>
+                                {% with winning_bid=item.vendorbid_set.filter.is_winner=True.first %}
+                                    {% if winning_bid %}
+                                        {{ winning_bid.vendor.name }}
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ winning_bid.currency }} {{ winning_bid.unit_price }} per unit
+                                            <br>
+                                            Total: {{ winning_bid.currency }} {{ winning_bid.total_price }}
+                                        </small>
+                                    {% else %}
+                                        No winning bid
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'vendor-bid' tender.id item.id %}" class="btn btn-sm btn-primary">Manage Bids</a>
+                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editItem{{ item.id }}">
+                                        Edit
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No items added yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

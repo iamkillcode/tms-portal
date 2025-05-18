@@ -4,8 +4,15 @@ from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from .models import TenderTracker, Department, Category, Tender
-from .forms import CustomUserCreationForm
+from .models import (
+    TenderTracker, Department, Category, Tender, TenderItem,
+    VendorBid, FrameworkAgreement, Vendor, ISONumber, ISOTracker,
+    Division, UserProfile, BreakfastItem, Order, OrderItem
+)
+from .forms import (
+    CustomUserCreationForm, TenderItemForm, VendorBidForm,
+    FrameworkAgreementForm
+)
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -603,3 +610,134 @@ def reports_view(request):
         'division_stats': division_stats,
         'monthly_tenders': monthly_tenders,
     })
+
+@login_required
+def tender_items_view(request, tender_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    items = tender.items.all().prefetch_related('vendorbid_set', 'vendorbid_set__vendor')
+    
+    if request.method == 'POST':
+        form = TenderItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.tender = tender
+            item.save()
+            messages.success(request, 'Item added successfully!')
+            return redirect('tender-items', tender_id=tender_id)
+    else:
+        form = TenderItemForm()
+    
+    return render(request, 'tender_items.html', {
+        'tender': tender,
+        'items': items,
+        'form': form
+    })
+
+@login_required
+def edit_tender_item_view(request, tender_id, item_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    item = get_object_or_404(TenderItem, id=item_id, tender=tender)
+    
+    if request.method == 'POST':
+        form = TenderItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Item updated successfully!')
+            return redirect('tender-items', tender_id=tender_id)
+    
+    return redirect('tender-items', tender_id=tender_id)
+
+@login_required
+def vendor_bids_view(request, tender_id, item_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    item = get_object_or_404(TenderItem, id=item_id, tender=tender)
+    bids = VendorBid.objects.filter(tender_item=item).select_related('vendor')
+    vendors = Vendor.objects.all()
+    
+    if request.method == 'POST':
+        form = VendorBidForm(request.POST)
+        if form.is_valid():
+            bid = form.save(commit=False)
+            bid.tender = tender
+            bid.tender_item = item
+            bid.save()
+            
+            if bid.is_winner:
+                # Set other bids for this item as non-winners
+                VendorBid.objects.filter(tender_item=item).exclude(id=bid.id).update(is_winner=False)
+            
+            messages.success(request, 'Bid recorded successfully!')
+            return redirect('vendor-bids', tender_id=tender_id, item_id=item_id)
+    else:
+        form = VendorBidForm()
+    
+    return render(request, 'vendor_bids.html', {
+        'tender': tender,
+        'item': item,
+        'bids': bids,
+        'vendors': vendors,
+        'form': form
+    })
+
+@login_required
+def edit_vendor_bid_view(request, tender_id, item_id, bid_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    item = get_object_or_404(TenderItem, id=item_id, tender=tender)
+    bid = get_object_or_404(VendorBid, id=bid_id, tender_item=item)
+    
+    if request.method == 'POST':
+        form = VendorBidForm(request.POST, instance=bid)
+        if form.is_valid():
+            bid = form.save()
+            
+            if bid.is_winner:
+                # Set other bids for this item as non-winners
+                VendorBid.objects.filter(tender_item=item).exclude(id=bid.id).update(is_winner=False)
+            
+            messages.success(request, 'Bid updated successfully!')
+            return redirect('vendor-bids', tender_id=tender_id, item_id=item_id)
+    
+    return redirect('vendor-bids', tender_id=tender_id, item_id=item_id)
+
+@login_required
+def framework_agreements_view(request, tender_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    agreements = tender.framework_agreements.all().select_related('vendor')
+    
+    # Get winning vendors from tender items
+    winning_vendors = Vendor.objects.filter(
+        vendorbid__tender=tender,
+        vendorbid__is_winner=True
+    ).distinct()
+    
+    if request.method == 'POST':
+        form = FrameworkAgreementForm(request.POST)
+        if form.is_valid():
+            agreement = form.save(commit=False)
+            agreement.tender = tender
+            agreement.save()
+            messages.success(request, 'Framework Agreement created successfully!')
+            return redirect('framework-agreements', tender_id=tender_id)
+    else:
+        form = FrameworkAgreementForm()
+    
+    return render(request, 'framework_agreements.html', {
+        'tender': tender,
+        'agreements': agreements,
+        'winning_vendors': winning_vendors,
+        'form': form
+    })
+
+@login_required
+def edit_framework_agreement_view(request, tender_id, agreement_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    agreement = get_object_or_404(FrameworkAgreement, id=agreement_id, tender=tender)
+    
+    if request.method == 'POST':
+        form = FrameworkAgreementForm(request.POST, instance=agreement)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Framework Agreement updated successfully!')
+            return redirect('framework-agreements', tender_id=tender_id)
+    
+    return redirect('framework-agreements', tender_id=tender_id)

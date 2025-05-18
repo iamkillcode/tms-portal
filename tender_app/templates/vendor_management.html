@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vendor Management - TMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Vendor Management</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Vendor Management</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVendorModal">
+            <i class="bi bi-plus-circle"></i> New Vendor
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Vendors</h6>
+                    <h2 class="mb-0">{{ total_vendors }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Active Agreements</h6>
+                    <h2 class="mb-0">{{ active_agreements }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Winning Bids</h6>
+                    <h2 class="mb-0">{{ winning_bids }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">Recent Activities</h6>
+                    <h2 class="mb-0">{{ recent_activities }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendors Table -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">Vendors</h5>
+                </div>
+                <div class="col-auto">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search vendors..." id="vendorSearch">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="vendorsTable">
+                    <thead>
+                        <tr>
+                            <th>Vendor Name</th>
+                            <th>Contact Person</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Active Agreements</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vendor in vendors %}
+                        <tr>
+                            <td>{{ vendor.name }}</td>
+                            <td>{{ vendor.contact_person }}</td>
+                            <td>{{ vendor.email }}</td>
+                            <td>{{ vendor.phone }}</td>
+                            <td>{{ vendor.active_agreements_count }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            data-bs-toggle="modal" data-bs-target="#viewVendorModal{{ vendor.id }}">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning" 
+                                            data-bs-toggle="modal" data-bs-target="#editVendorModal{{ vendor.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="bi bi-people display-4"></i>
+                                    <p class="mt-2">No vendors registered yet</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Vendor Modal -->
+<div class="modal fade" id="addVendorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'vendor-create' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Vendor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Vendor Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contact Person</label>
+                        <input type="text" name="contact_person" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" name="phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Vendor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View/Edit Vendor Modals -->
+{% for vendor in vendors %}
+<!-- View Modal -->
+<div class="modal fade" id="viewVendorModal{{ vendor.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vendor Details - {{ vendor.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Contact Information</h6>
+                        <p>
+                            <strong>Contact Person:</strong> {{ vendor.contact_person }}<br>
+                            <strong>Email:</strong> {{ vendor.email }}<br>
+                            <strong>Phone:</strong> {{ vendor.phone }}<br>
+                            <strong>Address:</strong><br>
+                            {{ vendor.address|linebreaks }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance Statistics</h6>
+                        <p>
+                            <strong>Active Agreements:</strong> {{ vendor.active_agreements_count }}<br>
+                            <strong>Total Bids:</strong> {{ vendor.total_bids }}<br>
+                            <strong>Winning Bids:</strong> {{ vendor.winning_bids }}<br>
+                            <strong>Success Rate:</strong> {{ vendor.success_rate }}%
+                        </p>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <h6>Recent Activity</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Tender</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for activity in vendor.recent_activities %}
+                                    <tr>
+                                        <td>{{ activity.date|date:"Y-m-d" }}</td>
+                                        <td>{{ activity.tender_number }}</td>
+                                        <td>{{ activity.type }}</td>
+                                        <td>{{ activity.status }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No recent activity</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editVendorModal{{ vendor.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'vendor-update' vendor.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Vendor - {{ vendor.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Vendor Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ vendor.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contact Person</label>
+                        <input type="text" name="contact_person" class="form-control" value="{{ vendor.contact_person }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ vendor.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" name="phone" class="form-control" value="{{ vendor.phone }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="3" required>{{ vendor.address }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block extra_js %}
+<script>
+document.getElementById('vendorSearch').addEventListener('keyup', function() {
+    var searchText = this.value.toLowerCase();
+    var tableRows = document.querySelectorAll('#vendorsTable tbody tr');
+    
+    tableRows.forEach(function(row) {
+        var text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchText) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

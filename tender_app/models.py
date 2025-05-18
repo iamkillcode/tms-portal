@@ -201,6 +201,91 @@ class ISONumber(models.Model):
         return self.iso_number
 
 
+class Vendor(models.Model):
+    name = models.CharField(max_length=255)
+    address = models.TextField()
+    contact_person = models.CharField(max_length=255)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class FrameworkAgreement(models.Model):
+    tender = models.ForeignKey('Tender', on_delete=models.CASCADE, related_name='framework_agreements')
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    agreement_number = models.CharField(max_length=100, unique=True)
+    status = models.CharField(max_length=50, choices=[
+        ('active', 'Active'),
+        ('expired', 'Expired'),
+        ('terminated', 'Terminated')
+    ])
+    terms_conditions = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.agreement_number} - {self.vendor.name}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class TenderItem(models.Model):
+    tender = models.ForeignKey('Tender', on_delete=models.CASCADE, related_name='items')
+    item_name = models.CharField(max_length=255)
+    description = models.TextField()
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_of_measure = models.CharField(max_length=50)
+    brand = models.CharField(max_length=255, blank=True, null=True)
+    manufacturer = models.CharField(max_length=255, blank=True, null=True)
+    specifications = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.item_name} - {self.tender.tender_number}"
+
+    class Meta:
+        ordering = ['item_name']
+
+
+class VendorBid(models.Model):
+    tender = models.ForeignKey('Tender', on_delete=models.CASCADE, related_name='bids')
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    tender_item = models.ForeignKey(TenderItem, on_delete=models.CASCADE)
+    unit_price = models.DecimalField(max_digits=15, decimal_places=2)
+    total_price = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3, default='GHS')  # ISO currency code
+    is_winner = models.BooleanField(default=False)
+    technical_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    financial_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    total_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Auto-calculate total price if unit price and quantity change
+        self.total_price = self.unit_price * self.tender_item.quantity
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.vendor.name} - {self.tender_item.item_name}"
+
+    class Meta:
+        ordering = ['-total_score', 'total_price']
+        unique_together = ['tender', 'vendor', 'tender_item']
+
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -218,8 +303,6 @@ def save_user_profile(sender, instance, **kwargs):
         )
     else:
         instance.profile.save()
-
-
 
 def create_divisions(apps, schema_editor):
     Division = apps.get_model('tender_app', 'Division')

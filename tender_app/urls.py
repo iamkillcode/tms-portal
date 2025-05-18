@@ -18,17 +18,29 @@ urlpatterns = [
         path('activity/', views.tender_activity_view, name='tender-activity'),
         path('<int:tender_id>/update/', views.tender_update_view, name='tender-update'),
         path('export/', views.export_tenders_view, name='export-tenders'),
+        # Tender Items URLs
+        path('<int:tender_id>/items/', views.tender_items_view, name='tender-items'),
+        path('<int:tender_id>/items/<int:item_id>/edit/', views.edit_tender_item_view, name='edit-tender-item'),
+        # Vendor Bids URLs
+        path('<int:tender_id>/items/<int:item_id>/bids/', views.vendor_bids_view, name='vendor-bids'),
+        path('<int:tender_id>/items/<int:item_id>/bids/<int:bid_id>/edit/', 
+             views.edit_vendor_bid_view, name='edit-vendor-bid'),
+        # Framework Agreement URLs
+        path('<int:tender_id>/agreements/', views.framework_agreements_view, name='framework-agreements'),
+        path('<int:tender_id>/agreements/<int:agreement_id>/edit/', 
+             views.edit_framework_agreement_view, name='edit-framework-agreement'),
     ])),
     
     # Search and Reports URLs
     path('search/', views.search_view, name='search'),
     path('reports/', views.reports_view, name='reports'),
     path('tender/<int:pk>/', views.TenderDetailView.as_view(), name='tender-detail'),
-    
-    # Shop URLs
+      # Shop URLs
     path('shop/', views.shop_view, name='shop'),
     path('orders/', views.order_list_view, name='order-list'),
-    path('shop/add-to-order/<int:item_id>/', views.add_to_order_view, name='add-to-order'),    # ISO URLs
+    path('shop/add-to-order/<int:item_id>/', views.add_to_order_view, name='add-to-order'),
+    
+    # ISO URLs
     path('iso-generator/', views.iso_generator_view, name='iso-generator'),
     path('iso/create/', views.iso_generator_view, name='iso-create'),  # Alias for iso-generator
     path('iso-generator/<int:tender_id>/', views.iso_generator_view, name='iso-generator-for-tender'),
