@@ -1,9 +1,9 @@
-
-# Python
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+
+# Python
 .Python
 env/
 build/
