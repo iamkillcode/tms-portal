@@ -1,0 +1,199 @@
+/* Custom admin styling */
+:root {
+    --primary: #2c3e50;
+    --secondary: #34495e;
+    --accent: #3498db;
+    --success: #2ecc71;
+    --warning: #f1c40f;
+    --danger: #e74c3c;
+    --light: #ecf0f1;
+    --dark: #2c3e50;
+}
+
+/* Global Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--body-fg);
+    background: var(--body-bg);
+}
+
+/* Header Styles */
+#header {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#branding h1 {
+    font-weight: 600;
+}
+
+/* Content Area */
+#content {
+    padding: 20px;
+}
+
+/* Form Styles */
+.form-row {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.form-row:last-child {
+    border-bottom: none;
+}
+
+.submit-row {
+    background: var(--light);
+    padding: 15px 20px;
+    border-radius: 0 0 4px 4px;
+}
+
+/* Button Styles */
+.button, input[type=submit], input[type=button], .submit-row input {
+    background: var(--accent);
+    color: white;
+    border-radius: 4px;
+    padding: 8px 16px;
+    border: none;
+    transition: background 0.3s ease;
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover {
+    background: #2980b9;
+}
+
+.button.default, input[type=submit].default {
+    background: var(--success);
+}
+
+.button.default:hover, input[type=submit].default:hover {
+    background: #27ae60;
+}
+
+/* Table Styles */
+#changelist table {
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#changelist table thead th {
+    background: var(--secondary);
+    color: white;
+    padding: 12px 15px;
+}
+
+#changelist table tbody tr:hover {
+    background: var(--light);
+}
+
+#changelist .actions {
+    background: var(--light);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+/* Filter styling */
+#changelist-filter {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#changelist-filter h2 {
+    background: var(--secondary);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 4px 4px 0 0;
+    margin: 0;
+}
+
+/* Message Styles */
+.messagelist {
+    margin: 0;
+    padding: 0;
+}
+
+.messagelist li {
+    padding: 12px 15px;
+    margin: 0 0 10px 0;
+    border-radius: 4px;
+}
+
+.messagelist li.success {
+    background: var(--success);
+    color: white;
+}
+
+.messagelist li.warning {
+    background: var(--warning);
+    color: #444;
+}
+
+.messagelist li.error {
+    background: var(--danger);
+    color: white;
+}
+
+/* Dashboard widgets */
+.dashboard .module table th {
+    width: 100%;
+}
+
+.dashboard .module table td {
+    white-space: nowrap;
+    padding: 8px 15px;
+}
+
+/* Breadcrumbs styling */
+div.breadcrumbs {
+    background: var(--secondary);
+    padding: 15px 20px;
+    color: #f5f5f5;
+    font-size: 14px;
+}
+
+div.breadcrumbs a {
+    color: white;
+}
+
+/* Navigation improvements */
+.object-tools {
+    margin-top: 15px;
+}
+
+.object-tools a {
+    background: var(--accent);
+    padding: 8px 16px;
+    border-radius: 4px;
+}
+
+.object-tools a:hover {
+    background: #2980b9;
+}
+
+/* Responsive improvements */
+@media (max-width: 767px) {
+    #header {
+        padding: 10px 15px;
+    }
+    
+    #changelist-search input {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    #changelist-filter {
+        position: static;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .submit-row a.deletelink {
+        display: block;
+        text-align: center;
+        margin: 5px 0;
+    }
+}

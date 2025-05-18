@@ -1,0 +1,98 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    :root {
+        --primary: #2c3e50;
+        --secondary: #34495e;
+        --accent: #3498db;
+    }
+
+    #header {
+        background: var(--primary);
+        margin-bottom: 0;
+    }
+
+    .navbar {
+        background: var(--secondary);
+        padding: 8px 40px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .navbar ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .navbar a {
+        color: white;
+        text-decoration: none;
+        font-size: 13px;
+        opacity: 0.9;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .navbar a:hover {
+        opacity: 1;
+        background: rgba(255,255,255,0.1);
+    }
+
+    .navbar a.active {
+        background: var(--accent);
+        opacity: 1;
+    }
+
+    /* Ensure content is positioned correctly */
+    #container {
+        margin-top: 10px;
+    }
+
+    /* Make navbar responsive */
+    @media (max-width: 1024px) {
+        .navbar ul {
+            justify-content: center;
+        }
+        .navbar {
+            padding: 8px 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a>
+</h1>
+{% endblock %}
+
+{% block header %}
+{{ block.super }}
+<div class="navbar">
+    <ul>
+        <li><a href="{% url 'admin:tender_app_tender_changelist' %}" {% if 'tender/' in request.path %}class="active"{% endif %}>Tenders</a></li>
+        <li><a href="{% url 'admin:tender_app_department_changelist' %}" {% if 'department/' in request.path %}class="active"{% endif %}>Departments</a></li>
+        <li><a href="{% url 'admin:tender_app_vendor_changelist' %}" {% if 'vendor/' in request.path %}class="active"{% endif %}>Vendors</a></li>
+        <li><a href="{% url 'admin:tender_app_vendorbid_changelist' %}" {% if 'vendorbid/' in request.path %}class="active"{% endif %}>Vendor Bids</a></li>
+        <li><a href="{% url 'admin:tender_app_frameworkagreement_changelist' %}" {% if 'frameworkagreement/' in request.path %}class="active"{% endif %}>Agreements</a></li>
+        <li><a href="{% url 'admin:tender_app_isonumber_changelist' %}" {% if 'isonumber/' in request.path %}class="active"{% endif %}>ISO Numbers</a></li>
+        <li><a href="{% url 'admin:auth_user_changelist' %}" {% if 'auth/user/' in request.path %}class="active"{% endif %}>Users</a></li>
+        <li><a href="{% url 'dashboard' %}" target="_blank">View Site</a></li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

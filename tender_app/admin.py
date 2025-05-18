@@ -1,17 +1,21 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from django.urls import reverse
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.urls import reverse
+from django.utils.html import format_html
+from django.http import HttpResponse
+from datetime import datetime, timedelta
+import csv
 from .models import (
     TenderTracker, Department, Tender, Category, UserProfile, 
-    BreakfastItem, Order, OrderItem, Division, ISOTracker, ISONumber
+    BreakfastItem, Order, OrderItem, Division, ISOTracker, ISONumber,
+    TenderItem, VendorBid, FrameworkAgreement, Vendor
 )
 
-# Customize admin site
+# Customize admin site header and title
 admin.site.site_header = "Tender Management System"
-admin.site.site_title = "Tender Management Admin"
-admin.site.index_title = "Dashboard"
+admin.site.site_title = "TMS Admin"
+admin.site.index_title = "Welcome to TMS Admin"
 
 class CustomUserAdmin(UserAdmin):
     actions = ['delete_selected']
@@ -305,3 +309,97 @@ class ISONumberAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'officer__profile', 'division', 'department'
         )
+
+# Register TenderItem model
+@admin.register(TenderItem)
+class TenderItemAdmin(admin.ModelAdmin):
+    list_display = ('item_name', 'tender', 'quantity', 'unit_of_measure', 'winning_bid_display')
+    list_filter = ('tender__status',)
+    search_fields = ('item_name', 'tender__tender_number', 'description')
+    actions = ['export_as_csv']
+
+    def winning_bid_display(self, obj):
+        winning_bid = obj.vendorbid_set.filter(is_winner=True).first()
+        if winning_bid:
+            return format_html(
+                '<span style="color: green;">₪{}</span>',
+                winning_bid.unit_price
+            )
+        return '-'
+    winning_bid_display.short_description = 'Winning Bid'
+
+    def export_as_csv(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename={meta.verbose_name_plural}-{datetime.now().strftime("%Y-%m-%d")}.csv'
+        writer = csv.writer(response)
+        
+        writer.writerow(field_names)
+        for obj in queryset:
+            writer.writerow([getattr(obj, field) for field in field_names])
+        
+        return response
+    export_as_csv.short_description = "Export Selected Items to CSV"
+
+@admin.register(Vendor)
+class VendorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'contact_person', 'email', 'phone', 'active_agreements_count', 'total_bids')
+    list_filter = ('created_at',)
+    search_fields = ('name', 'contact_person', 'email')
+    actions = ['export_vendor_data']
+
+    def active_agreements_count(self, obj):
+        return obj.framework_agreements.filter(status='active').count()
+    active_agreements_count.short_description = 'Active Agreements'
+
+    def total_bids(self, obj):
+        return obj.vendorbid_set.count()
+    total_bids.short_description = 'Total Bids'
+
+@admin.register(VendorBid)
+class VendorBidAdmin(admin.ModelAdmin):
+    list_display = ('vendor', 'tender_item', 'unit_price', 'total_price', 'total_score', 'is_winner')
+    list_filter = ('is_winner', 'created_at')
+    search_fields = ('vendor__name', 'tender_item__item_name')
+    date_hierarchy = 'created_at'
+    actions = ['mark_as_winning_bid']
+
+    def mark_as_winning_bid(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(request, "Please select exactly one bid to mark as winner")
+            return
+        
+        bid = queryset.first()
+        VendorBid.objects.filter(tender_item=bid.tender_item).update(is_winner=False)
+        bid.is_winner = True
+        bid.save()
+    mark_as_winning_bid.short_description = "Mark as winning bid"
+
+@admin.register(FrameworkAgreement)
+class FrameworkAgreementAdmin(admin.ModelAdmin):
+    list_display = ('vendor', 'agreement_number', 'start_date', 'end_date', 'status', 'days_until_expiry')
+    list_filter = ('status', 'start_date', 'end_date')
+    search_fields = ('vendor__name', 'agreement_number', 'terms_conditions')
+    readonly_fields = ('days_until_expiry',)
+    actions = ['extend_agreement']
+
+    def days_until_expiry(self, obj):
+        if obj.end_date:
+            today = datetime.now().date()
+            days = (obj.end_date - today).days
+            if days < 0:
+                return format_html('<span style="color: red;">Expired</span>')
+            elif days < 30:
+                return format_html('<span style="color: orange;">{} days</span>', days)
+            return f'{days} days'
+        return '-'
+    days_until_expiry.short_description = 'Days Until Expiry'
+
+    def extend_agreement(self, request, queryset):
+        for agreement in queryset:
+            if agreement.end_date:
+                agreement.end_date = agreement.end_date + timedelta(days=365)
+                agreement.save()
+    extend_agreement.short_description = "Extend agreements by 1 year"

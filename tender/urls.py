@@ -4,7 +4,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('grappelli/', include('grappelli.urls')),  # Grappelli URLS - must be before admin
     path('admin/', admin.site.urls),  # Default Django admin
     path('', include('tender_app.urls')),  # Frontend URLs
 ]
