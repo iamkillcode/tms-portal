@@ -245,6 +245,21 @@ class TenderItem(models.Model):
     description = models.TextField()
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     unit_of_measure = models.CharField(max_length=50)
+    
+    # Chemical-specific fields
+    chemical_grade = models.CharField(max_length=255, blank=True, null=True, help_text="e.g., HPLC Grade, Analytical Reagent Grade")
+    molar_mass = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., 88.11 g/mol")
+    chemical_formula = models.CharField(max_length=255, blank=True, null=True, help_text="e.g., CH3COCH3")
+    density = models.CharField(max_length=100, blank=True, null=True, help_text="e.g., 0.791 g/mL at 25°C")
+    vapor_density = models.CharField(max_length=100, blank=True, null=True, help_text="e.g., 2 (vs air)")
+    assay_percentage = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., ≥99.8%")
+    physical_form = models.CharField(max_length=100, blank=True, null=True, help_text="e.g., Solvent, Powder, Crystal")
+    package_size = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., 2.5L, 500ml")
+    appearance = models.CharField(max_length=255, blank=True, null=True, help_text="e.g., Colorless liquid")
+    impurities = models.TextField(blank=True, null=True, help_text="List of impurity limits")
+    specifications = models.TextField(blank=True, null=True)
+    
+    # Existing fields
     brand = models.CharField(max_length=255, blank=True, null=True)
     manufacturer = models.CharField(max_length=255, blank=True, null=True)
     specifications = models.TextField(blank=True, null=True)
@@ -327,4 +342,61 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(create_divisions),
     ]
+
+class Chemical(models.Model):
+    CHEMICAL_GRADES = [
+        ('HPLC', 'High Performance Liquid Chromatography Grade'),
+        ('AR', 'Analytical Reagent Grade'),
+        ('GC', 'Gas Chromatography Grade'),
+        ('USP', 'United States Pharmacopeia Grade'),
+        ('ACS', 'American Chemical Society Grade'),
+        ('TECH', 'Technical Grade'),
+        ('GEN', 'General Purpose Reagent Grade'),
+    ]
+
+    lot_number = models.CharField(max_length=10)
+    chemical_name = models.CharField(max_length=255)
+    formula = models.CharField(max_length=100, blank=True)
+    grade = models.CharField(max_length=10, choices=CHEMICAL_GRADES)
+    package_size = models.CharField(max_length=50)
+    quantity = models.IntegerField()
+    tender_item = models.ForeignKey('TenderItem', on_delete=models.CASCADE, related_name='chemicals')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.chemical_name} ({self.lot_number})"
+
+    class Meta:
+        ordering = ['chemical_name', 'lot_number']
+
+
+class ChemicalSpecification(models.Model):
+    SPEC_TYPES = [
+        ('MOLAR_MASS', 'Molar Mass'),
+        ('DENSITY', 'Density'),
+        ('ASSAY', 'Assay'),
+        ('PURITY', 'Purity'),
+        ('APPEARANCE', 'Appearance'),
+        ('VAPOR_DENSITY', 'Vapor Density'),
+        ('IMPURITY', 'Impurity Limit'),
+        ('PH', 'pH'),
+        ('BOILING_POINT', 'Boiling Point'),
+        ('FLASH_POINT', 'Flash Point'),
+        ('SOLUBILITY', 'Solubility'),
+        ('OTHER', 'Other'),
+    ]
+
+    chemical = models.ForeignKey(Chemical, on_delete=models.CASCADE, related_name='specifications')
+    spec_type = models.CharField(max_length=20, choices=SPEC_TYPES)
+    value = models.CharField(max_length=255)
+    unit = models.CharField(max_length=50, blank=True)
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.chemical.chemical_name} - {self.get_spec_type_display()}: {self.value} {self.unit}"
+
+    class Meta:
+        ordering = ['chemical', 'spec_type']
+        unique_together = ['chemical', 'spec_type']
 

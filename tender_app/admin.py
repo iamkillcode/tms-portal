@@ -9,7 +9,7 @@ import csv
 from .models import (
     TenderTracker, Department, Tender, Category, UserProfile, 
     BreakfastItem, Order, OrderItem, Division, ISOTracker, ISONumber,
-    TenderItem, VendorBid, FrameworkAgreement, Vendor
+    TenderItem, VendorBid, FrameworkAgreement, Vendor, Chemical, ChemicalSpecification
 )
 
 # Customize admin site header and title
@@ -313,35 +313,22 @@ class ISONumberAdmin(admin.ModelAdmin):
 # Register TenderItem model
 @admin.register(TenderItem)
 class TenderItemAdmin(admin.ModelAdmin):
-    list_display = ('item_name', 'tender', 'quantity', 'unit_of_measure', 'winning_bid_display')
-    list_filter = ('tender__status',)
-    search_fields = ('item_name', 'tender__tender_number', 'description')
-    actions = ['export_as_csv']
-
-    def winning_bid_display(self, obj):
-        winning_bid = obj.vendorbid_set.filter(is_winner=True).first()
-        if winning_bid:
-            return format_html(
-                '<span style="color: green;">₪{}</span>',
-                winning_bid.unit_price
-            )
-        return '-'
-    winning_bid_display.short_description = 'Winning Bid'
-
-    def export_as_csv(self, request, queryset):
-        meta = self.model._meta
-        field_names = [field.name for field in meta.fields]
-        
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename={meta.verbose_name_plural}-{datetime.now().strftime("%Y-%m-%d")}.csv'
-        writer = csv.writer(response)
-        
-        writer.writerow(field_names)
-        for obj in queryset:
-            writer.writerow([getattr(obj, field) for field in field_names])
-        
-        return response
-    export_as_csv.short_description = "Export Selected Items to CSV"
+    list_display = ('item_name', 'tender', 'quantity', 'unit_of_measure', 'chemical_grade')
+    search_fields = ('item_name', 'description', 'chemical_formula', 'chemical_grade')
+    list_filter = ('chemical_grade', 'physical_form')
+    fieldsets = (
+        (None, {
+            'fields': ('tender', 'item_name', 'description', 'quantity', 'unit_of_measure')
+        }),
+        ('Chemical Properties', {
+            'fields': ('chemical_grade', 'molar_mass', 'chemical_formula', 'density', 
+                      'vapor_density', 'assay_percentage', 'physical_form', 'package_size',
+                      'appearance', 'impurities', 'specifications')
+        }),
+        ('Manufacturer Information', {
+            'fields': ('brand', 'manufacturer')
+        }),
+    )
 
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
@@ -403,3 +390,36 @@ class FrameworkAgreementAdmin(admin.ModelAdmin):
                 agreement.end_date = agreement.end_date + timedelta(days=365)
                 agreement.save()
     extend_agreement.short_description = "Extend agreements by 1 year"
+
+class ChemicalSpecificationInline(admin.TabularInline):
+    model = ChemicalSpecification
+    extra = 1
+
+@admin.register(Chemical)
+class ChemicalAdmin(admin.ModelAdmin):
+    list_display = ('chemical_name', 'lot_number', 'formula', 'grade', 'package_size', 'quantity')
+    list_filter = ('grade', 'tender_item__tender')
+    search_fields = ('chemical_name', 'lot_number', 'formula')
+    inlines = [ChemicalSpecificationInline]
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('chemical_name', 'lot_number', 'formula')
+        }),
+        ('Specifications', {
+            'fields': ('grade', 'package_size', 'quantity')
+        }),
+        ('Relationships', {
+            'fields': ('tender_item',)
+        }),
+        ('System Information', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+@admin.register(ChemicalSpecification)
+class ChemicalSpecificationAdmin(admin.ModelAdmin):
+    list_display = ('chemical', 'spec_type', 'value', 'unit')
+    list_filter = ('spec_type', 'chemical__grade')
+    search_fields = ('chemical__chemical_name', 'value')

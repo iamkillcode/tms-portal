@@ -77,6 +77,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'chemical_list' or request.resolver_match.url_name == 'chemical_detail' %}active{% endif %}" 
+                                   href="{% url 'chemical_list' %}">
+                                   <i class="bi bi-flask"></i> Chemical Management
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item" href="{% url 'tender-list' %}">
                                    <i class="bi bi-file-earmark-text"></i> Framework Agreements
                                 </a>

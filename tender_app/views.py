@@ -7,11 +7,13 @@ from django.contrib.auth.forms import AuthenticationForm
 from .models import (
     TenderTracker, Department, Category, Tender, TenderItem,
     VendorBid, FrameworkAgreement, Vendor, ISONumber, ISOTracker,
-    Division, UserProfile, BreakfastItem, Order, OrderItem
+    Division, UserProfile, BreakfastItem, Order, OrderItem,
+    Chemical, ChemicalSpecification
 )
 from .forms import (
     CustomUserCreationForm, TenderItemForm, VendorBidForm,
-    FrameworkAgreementForm
+    FrameworkAgreementForm, ChemicalForm, ChemicalSpecificationForm,
+    ChemicalImportForm
 )
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -33,6 +35,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.views.generic import DetailView
 from .models import Tender
+import pandas as pd
 
 # def create_missing_profiles():
 #     for user in User.objects.all():
@@ -741,3 +744,136 @@ def edit_framework_agreement_view(request, tender_id, agreement_id):
             return redirect('framework-agreements', tender_id=tender_id)
     
     return redirect('framework-agreements', tender_id=tender_id)
+
+@login_required
+def chemical_list(request):
+    chemicals = Chemical.objects.all().select_related('tender_item__tender')
+    
+    # Filter by tender item if provided
+    tender_item_id = request.GET.get('tender_item')
+    if tender_item_id:
+        chemicals = chemicals.filter(tender_item_id=tender_item_id)
+    
+    # Search functionality
+    search_query = request.GET.get('search')
+    if search_query:
+        chemicals = chemicals.filter(
+            Q(chemical_name__icontains=search_query) |
+            Q(lot_number__icontains=search_query) |
+            Q(formula__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(chemicals, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'tender_items': TenderItem.objects.all(),
+        'search_query': search_query,
+        'tender_item_id': tender_item_id,
+    }
+    return render(request, 'tender_app/chemical_list.html', context)
+
+@login_required
+def chemical_create(request):
+    if request.method == 'POST':
+        form = ChemicalForm(request.POST)
+        if form.is_valid():
+            chemical = form.save()
+            messages.success(request, 'Chemical created successfully.')
+            return redirect('chemical_detail', pk=chemical.pk)
+    else:
+        form = ChemicalForm()
+    
+    return render(request, 'tender_app/chemical_form.html', {'form': form, 'title': 'Create Chemical'})
+
+@login_required
+def chemical_detail(request, pk):
+    chemical = get_object_or_404(Chemical, pk=pk)
+    spec_form = ChemicalSpecificationForm()
+    
+    if request.method == 'POST':
+        spec_form = ChemicalSpecificationForm(request.POST)
+        if spec_form.is_valid():
+            specification = spec_form.save(commit=False)
+            specification.chemical = chemical
+            specification.save()
+            messages.success(request, 'Specification added successfully.')
+            return redirect('chemical_detail', pk=pk)
+    
+    context = {
+        'chemical': chemical,
+        'spec_form': spec_form,
+        'specifications': chemical.specifications.all(),
+    }
+    return render(request, 'tender_app/chemical_detail.html', context)
+
+@login_required
+def chemical_update(request, pk):
+    chemical = get_object_or_404(Chemical, pk=pk)
+    if request.method == 'POST':
+        form = ChemicalForm(request.POST, instance=chemical)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Chemical updated successfully.')
+            return redirect('chemical_detail', pk=pk)
+    else:
+        form = ChemicalForm(instance=chemical)
+    
+    return render(request, 'tender_app/chemical_form.html', {'form': form, 'title': 'Update Chemical'})
+
+@login_required
+def chemical_import(request):
+    if request.method == 'POST':
+        form = ChemicalImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES['excel_file']
+            tender_item = form.cleaned_data['tender_item']
+            
+            try:
+                # Read Excel file
+                df = pd.read_excel(excel_file)
+                
+                for _, row in df.iterrows():
+                    # Create Chemical record
+                    chemical = Chemical.objects.create(
+                        tender_item=tender_item,
+                        chemical_name=row['chemical_name'],
+                        lot_number=row['lot_number'],
+                        formula=row.get('formula', ''),
+                        grade=row['grade'],
+                        package_size=row['package_size'],
+                        quantity=row['quantity']
+                    )
+                    
+                    # Create specifications if they exist
+                    spec_columns = ['molar_mass', 'density', 'purity', 'appearance']
+                    for spec_type in spec_columns:
+                        if spec_type in row and pd.notna(row[spec_type]):
+                            ChemicalSpecification.objects.create(
+                                chemical=chemical,
+                                spec_type=spec_type.upper(),
+                                value=str(row[spec_type]),
+                                unit=row.get(f'{spec_type}_unit', '')
+                            )
+                
+                messages.success(request, 'Chemicals imported successfully.')
+                return redirect('chemical_list')
+                
+            except Exception as e:
+                messages.error(request, f'Error importing chemicals: {str(e)}')
+                
+    else:
+        form = ChemicalImportForm()
+    
+    return render(request, 'tender_app/chemical_import.html', {'form': form})
+
+@login_required
+def chemical_spec_delete(request, pk):
+    spec = get_object_or_404(ChemicalSpecification, pk=pk)
+    chemical_pk = spec.chemical.pk
+    spec.delete()
+    messages.success(request, 'Specification deleted successfully.')
+    return redirect('chemical_detail', pk=chemical_pk)

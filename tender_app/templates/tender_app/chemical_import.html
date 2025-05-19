@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Import Chemicals - TMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Import Chemicals from Excel</h2>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'chemical_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% for field in form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="alert alert-danger">
+                                {{ field.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="alert alert-info">
+                            <h5>Excel File Format</h5>
+                            <p>The Excel file should contain the following columns:</p>
+                            <ul>
+                                <li><strong>chemical_name</strong> (required)</li>
+                                <li><strong>lot_number</strong> (required)</li>
+                                <li><strong>formula</strong> (optional)</li>
+                                <li><strong>grade</strong> (required) - Must be one of: HPLC, AR, GC, USP, ACS, TECH, GEN</li>
+                                <li><strong>package_size</strong> (required)</li>
+                                <li><strong>quantity</strong> (required)</li>
+                                <li><strong>molar_mass</strong> (optional)</li>
+                                <li><strong>density</strong> (optional)</li>
+                                <li><strong>purity</strong> (optional)</li>
+                                <li><strong>appearance</strong> (optional)</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-file-earmark-excel"></i> Import Chemicals
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

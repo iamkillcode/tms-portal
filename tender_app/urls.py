@@ -49,4 +49,14 @@ urlpatterns = [
 
     # Dashboard URL
     path('dashboard/', views.dashboard_view, name='dashboard'),
+
+    # Chemical Management URLs
+    path('chemicals/', include([
+        path('', views.chemical_list, name='chemical_list'),
+        path('create/', views.chemical_create, name='chemical_create'),
+        path('import/', views.chemical_import, name='chemical_import'),
+        path('<int:pk>/', views.chemical_detail, name='chemical_detail'),
+        path('<int:pk>/update/', views.chemical_update, name='chemical_update'),
+        path('spec/<int:pk>/delete/', views.chemical_spec_delete, name='chemical_spec_delete'),
+    ])),
 ]
