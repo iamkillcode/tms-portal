@@ -219,7 +219,7 @@ class Vendor(models.Model):
 
 class FrameworkAgreement(models.Model):
     tender = models.ForeignKey('Tender', on_delete=models.CASCADE, related_name='framework_agreements')
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='framework_agreements')
     start_date = models.DateField()
     end_date = models.DateField()
     agreement_number = models.CharField(max_length=100, unique=True)

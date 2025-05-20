@@ -349,9 +349,25 @@ class VendorAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     search_fields = ('name', 'contact_person', 'email')
     actions = ['export_vendor_data']
-
+    
+    def export_vendor_data(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename=vendors-{datetime.now().strftime("%Y-%m-%d")}.csv'
+        writer = csv.writer(response)
+        
+        writer.writerow(field_names)
+        for obj in queryset:
+            writer.writerow([getattr(obj, field) for field in field_names])
+        
+        return response
+    export_vendor_data.short_description = "Export Selected Vendors to CSV"
+    
     def active_agreements_count(self, obj):
-        return obj.framework_agreements.filter(status='active').count()
+        # Use direct foreign key filter instead of accessing a non-existent attribute
+        return FrameworkAgreement.objects.filter(vendor=obj, status='active').count()
     active_agreements_count.short_description = 'Active Agreements'
 
     def total_bids(self, obj):
