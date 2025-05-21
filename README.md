@@ -39,7 +39,16 @@ TMS streamlines the entire procurement process, from tender generation through v
 - Division-based categorization
 - ISO document lifecycle management
 
-### 6. User Management
+### 6. ToDo System
+- Task creation and management
+- List organization and categorization
+- Priority and status tracking
+- Due date management
+- Comments and file attachments
+- Calendar view for scheduling
+- ToDo data export
+
+### 7. User Management
 - Role-based access control
 - User profile management
 - Activity tracking
@@ -158,6 +167,20 @@ python manage.py runserver
 3. Add items to cart
 4. Submit order
 
+#### ToDo System
+1. Access ToDo Dashboard from main navigation
+2. Create ToDo lists to organize tasks by project or category
+3. Add tasks with details:
+   - Title and description
+   - Priority (Low/Medium/High/Critical)
+   - Status (Not Started/In Progress/Completed/Deferred)
+   - Due date and time
+   - Progress percentage
+4. Add comments and file attachments to tasks
+5. Organize tasks with tags
+6. View calendar to see due dates
+7. Export ToDo data for reporting
+
 #### Reports and Analytics
 1. Access Reports section
 2. Select report type
@@ -181,6 +204,15 @@ tms-portal/
 │   ├── utils.py           # Utility functions
 │   ├── migrations/        # Database migrations
 │   └── templates/         # App-specific templates
+├── todo_app/               # ToDo system application
+│   ├── models.py          # ToDo data models
+│   ├── views.py           # ToDo view logic
+│   ├── forms.py           # ToDo form definitions
+│   ├── admin.py           # ToDo admin customization
+│   ├── urls.py            # ToDo URL patterns
+│   ├── migrations/        # ToDo database migrations
+│   └── templates/         # ToDo-specific templates
+│       └── todo_app/      # ToDo template files
 ├── templates/              # Global templates
 │   ├── base.html          # Base template
 │   └── admin/             # Admin template overrides
@@ -209,6 +241,18 @@ tms-portal/
 - `/iso-generator/` - Generate new ISO numbers
 - `/iso/list/` - List all ISO numbers
 - `/iso/<id>/` - ISO number details
+
+### ToDo System
+- `/todo/` - ToDo dashboard
+- `/todo/lists/` - View all ToDo lists
+- `/todo/lists/create/` - Create new ToDo list
+- `/todo/lists/<id>/` - View ToDo list details
+- `/todo/items/create/` - Create new ToDo item
+- `/todo/items/<id>/` - View ToDo item details
+- `/todo/items/<id>/update/` - Update ToDo item
+- `/todo/items/<id>/delete/` - Delete ToDo item
+- `/todo/calendar/` - Calendar view of ToDo items
+- `/todo/export/` - Export ToDo data
 
 ### User Management
 - `/login/` - User login

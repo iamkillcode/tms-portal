@@ -72,11 +72,9 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Additional Actions -->
+    </div>    <!-- Additional Actions -->
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card h-100 border-secondary">
                 <div class="card-body text-center">
                     <i class="bi bi-search text-secondary mb-3" style="font-size: 2rem;"></i>
@@ -86,7 +84,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card h-100 border-info">
                 <div class="card-body text-center">
                     <i class="bi bi-graph-up text-info mb-3" style="font-size: 2rem;"></i>
@@ -96,13 +94,23 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card h-100 border-danger">
                 <div class="card-body text-center">
                     <i class="bi bi-shop text-danger mb-3" style="font-size: 2rem;"></i>
                     <h5 class="card-title">Shop</h5>
                     <p class="card-text">Order breakfast items</p>
                     <a href="{% url 'shop' %}" class="btn btn-danger">Shop</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-check2-square text-success mb-3" style="font-size: 2rem;"></i>
+                    <h5 class="card-title">ToDo</h5>
+                    <p class="card-text">Track your activities</p>
+                    <a href="{% url 'todo_dashboard' %}" class="btn btn-success">Open</a>
                 </div>
             </div>
         </div>

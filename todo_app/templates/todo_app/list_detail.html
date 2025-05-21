@@ -1,0 +1,147 @@
+{% extends 'todo_app/base_todo.html' %}
+{% load static %}
+
+{% block title %}{{ todo_list.name }} | ToDo | {{ block.super }}{% endblock %}
+
+{% block todo_title %}{{ todo_list.name }}{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'todo_list_view' %}">Lists</a></li>
+<li class="breadcrumb-item active">{{ todo_list.name }}</li>
+{% endblock %}
+
+{% block todo_content %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="todo-list-header d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-2">
+                    <span class="list-color-indicator" style="background-color: {{ todo_list.color }};"></span>
+                    {{ todo_list.name }} 
+                    {% if todo_list.is_default %}<span class="badge bg-secondary">Default</span>{% endif %}
+                </h3>
+                <p class="text-muted mb-0">{{ todo_list.description }}</p>
+            </div>
+            <div>
+                <a href="{% url 'todo_list_update' list_id=todo_list.id %}" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil"></i> Edit List
+                </a>
+                {% if not todo_list.is_default %}
+                <a href="{% url 'todo_list_delete' list_id=todo_list.id %}" class="btn btn-outline-danger">
+                    <i class="bi bi-trash"></i> Delete List
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-8 mb-2 mb-md-0">
+                        <h5 class="mb-0">Tasks ({{ items.count }})</h5>
+                    </div>
+                    <div class="col-md-4">
+                        <form method="get" class="d-flex">
+                            <select name="sort" class="form-select form-select-sm me-2" onchange="this.form.submit()">
+                                <option value="-priority" {% if sort_by == "-priority" %}selected{% endif %}>Priority (High-Low)</option>
+                                <option value="priority" {% if sort_by == "priority" %}selected{% endif %}>Priority (Low-High)</option>
+                                <option value="due_date" {% if sort_by == "due_date" %}selected{% endif %}>Due Date (Asc)</option>
+                                <option value="-due_date" {% if sort_by == "-due_date" %}selected{% endif %}>Due Date (Desc)</option>
+                                <option value="title" {% if sort_by == "title" %}selected{% endif %}>Title (A-Z)</option>
+                                <option value="-created_at" {% if sort_by == "-created_at" %}selected{% endif %}>Newest First</option>
+                            </select>
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                                <i class="bi bi-plus-lg"></i> Add Task
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Filters -->
+                <div class="mb-4">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Status filter">
+                        <a href="{% url 'todo_list_detail' list_id=todo_list.id %}" class="btn btn-outline-primary {% if not status_filter %}active{% endif %}">All</a>
+                        <a href="{% url 'todo_list_detail' list_id=todo_list.id %}?status=not_started" class="btn btn-outline-primary {% if status_filter == 'not_started' %}active{% endif %}">Not Started</a>
+                        <a href="{% url 'todo_list_detail' list_id=todo_list.id %}?status=in_progress" class="btn btn-outline-primary {% if status_filter == 'in_progress' %}active{% endif %}">In Progress</a>
+                        <a href="{% url 'todo_list_detail' list_id=todo_list.id %}?status=completed" class="btn btn-outline-primary {% if status_filter == 'completed' %}active{% endif %}">Completed</a>
+                    </div>
+                </div>
+                
+                <!-- Tasks List -->
+                <div class="row">
+                    {% for item in items %}
+                    <div class="col-md-6">
+                        {% include "todo_app/partials/todo_item_card.html" with item=item %}
+                    </div>
+                    {% empty %}
+                    <div class="col">
+                        <div class="alert alert-light text-center">
+                            <h5>No tasks in this list yet.</h5>
+                            <p>Get started by adding your first task.</p>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                                <i class="bi bi-plus-lg"></i> Add Task
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'todo_item_create' %}">
+                {% csrf_token %}
+                <input type="hidden" name="todo_list" value="{{ todo_list.id }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTaskModalLabel">Add New Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="due_date" class="form-label">Due Date</label>
+                            <input type="datetime-local" class="form-control" id="due_date" name="due_date">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

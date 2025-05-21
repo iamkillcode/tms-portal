@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import (UserProfile, TenderItem, VendorBid, FrameworkAgreement, 
-                    Vendor, Chemical, ChemicalSpecification)
+                    Vendor, Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment)
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -91,4 +91,35 @@ class ChemicalSpecificationForm(forms.ModelForm):
             'value': forms.TextInput(attrs={'class': 'form-control'}),
             'unit': forms.TextInput(attrs={'class': 'form-control'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+class TaskForm(forms.ModelForm):
+    due_date = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'})
+    )
+    
+    class Meta:
+        model = Task
+        fields = ['title', 'description', 'due_date', 'status', 'priority', 'tender', 'vendor']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class TaskCategoryForm(forms.ModelForm):
+    color = forms.CharField(
+        widget=forms.TextInput(attrs={'type': 'color'}),
+        initial='#007bff'
+    )
+    
+    class Meta:
+        model = TaskCategory
+        fields = ['name', 'color']
+
+class TaskCommentForm(forms.ModelForm):
+    class Meta:
+        model = TaskComment
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Add a comment...'}),
         }

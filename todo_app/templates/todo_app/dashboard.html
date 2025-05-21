@@ -1,0 +1,174 @@
+{% extends 'todo_app/base_todo.html' %}
+{% load static %}
+
+{% block title %}ToDo Dashboard | {{ block.super }}{% endblock %}
+
+{% block todo_title %}ToDo Dashboard{% endblock %}
+
+{% block todo_content %}
+<div class="row mb-4">
+    <!-- Stats Cards -->
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Overdue</h5>
+                    <div class="h3 text-danger">{{ stats.overdue }}</div>
+                </div>
+                <p class="card-text text-muted">Tasks past their due date</p>
+                <div class="progress">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Due Soon</h5>
+                    <div class="h3 text-warning">{{ stats.upcoming_due }}</div>
+                </div>
+                <p class="card-text text-muted">Tasks due in the next 7 days</p>
+                <div class="progress">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Completed Today</h5>
+                    <div class="h3 text-success">{{ stats.completed_today }}</div>
+                </div>
+                <p class="card-text text-muted">Tasks you've completed today</p>
+                <div class="progress">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ToDo Lists -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">My Lists</h5>
+                <a href="{% url 'todo_list_create' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg"></i> New List
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="listsAccordion">
+                    {% for list_data in lists_with_items %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ list_data.list.id }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ list_data.list.id }}">
+                                <span class="list-color-indicator" style="background-color: {{ list_data.list.color }};"></span>
+                                {{ list_data.list.name }}
+                                <span class="badge bg-secondary rounded-pill ms-2">{{ list_data.items.count }}</span>
+                            </button>
+                        </h2>
+                        <div id="collapse{{ list_data.list.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#listsAccordion">
+                            <div class="accordion-body">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <p class="text-muted">{{ list_data.list.description }}</p>
+                                    <div>
+                                        <a href="{% url 'todo_list_detail' list_id=list_data.list.id %}" class="btn btn-sm btn-outline-primary">View All</a>
+                                    </div>
+                                </div>
+                                
+                                {% if list_data.items %}
+                                    {% for item in list_data.items|slice:":5" %}
+                                        {% include "todo_app/partials/todo_item_card.html" with item=item %}
+                                    {% endfor %}
+                                    
+                                    {% if list_data.items.count > 5 %}
+                                        <div class="text-center mt-3">
+                                            <a href="{% url 'todo_list_detail' list_id=list_data.list.id %}" class="btn btn-sm btn-outline-secondary">
+                                                View {{ list_data.items.count|add:"-5" }} more tasks
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="alert alert-light text-center">
+                                        <p>No tasks in this list yet.</p>
+                                        <a href="{% url 'todo_item_create' %}?list={{ list_data.list.id }}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-plus-lg"></i> Add Task
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-info">
+                        <p>You have no ToDo lists yet. Create your first list to get started.</p>
+                        <a href="{% url 'todo_list_create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Create First List
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Recent Activities -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Activities</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for item in recent_items %}
+                <a href="{% url 'todo_item_detail' item_id=item.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ item.title }}</h6>
+                        <small class="text-muted">{{ item.updated_at|timesince }} ago</small>
+                    </div>
+                    <small class="mb-1 d-block">
+                        <span class="badge bg-{{ item.status }}">{{ item.get_status_display }}</span>
+                        <span class="badge {% if item.priority == 'high' or item.priority == 'urgent' %}bg-danger{% else %}bg-info{% endif %}">
+                            {{ item.get_priority_display }}
+                        </span>
+                    </small>
+                </a>
+                {% empty %}
+                <div class="list-group-item">
+                    <p class="mb-0 text-muted">No recent activity</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Categories -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Categories</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for category in categories %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge rounded-pill" style="background-color: {{ category.color }};">&nbsp;</span>
+                        {{ category.name }}
+                    </div>
+                    <span class="badge bg-secondary rounded-pill">{{ category.item_count }}</span>
+                </div>
+                {% empty %}
+                <div class="list-group-item">
+                    <p class="mb-0 text-muted">No categories yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

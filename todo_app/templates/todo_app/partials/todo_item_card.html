@@ -1,0 +1,49 @@
+{% load static %}
+<div class="card todo-card priority-{{ item.priority }} {% if item.is_pinned %}is-pinned{% endif %} {% if item.is_flagged %}is-flagged{% endif %} {% if item.status == 'completed' %}status-completed{% endif %}" id="todo-card-{{ item.id }}">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <div class="form-check me-2">
+                <input class="form-check-input status-toggle" type="checkbox" value="" id="todo-check-{{ item.id }}" 
+                       data-item-id="{{ item.id }}" 
+                       {% if item.status == 'completed' %}checked{% endif %}>
+            </div>
+            <div class="flex-grow-1">
+                <h6 class="card-title mb-1 todo-title">{{ item.title }}</h6>
+                {% if item.description %}
+                <p class="card-text text-muted small mb-1">{{ item.description|truncatechars:50 }}</p>
+                {% endif %}
+                <div class="d-flex align-items-center">
+                    {% if item.category %}
+                    <span class="badge rounded-pill me-2" style="background-color: {{ item.category.color }};">{{ item.category.name }}</span>
+                    {% endif %}
+                    
+                    <span class="badge rounded-pill {% if item.priority == 'high' %}bg-warning text-dark{% elif item.priority == 'urgent' %}bg-danger{% elif item.priority == 'medium' %}bg-info{% else %}bg-success{% endif %} me-2">
+                        {{ item.get_priority_display }}
+                    </span>
+                    
+                    {% if item.due_date %}
+                    <span class="todo-due-date {% if item.due_date < now and item.status != 'completed' %}overdue{% endif %}">
+                        <i class="bi bi-calendar2-week"></i> {{ item.due_date|date:"M d, Y" }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="ms-2">
+                <a href="{% url 'todo_item_detail' item_id=item.id %}" class="btn btn-sm btn-light" 
+                   data-bs-toggle="tooltip" data-bs-placement="top" title="View Details">
+                    <i class="bi bi-eye"></i>
+                </a>
+                <a href="{% url 'todo_item_update' item_id=item.id %}" class="btn btn-sm btn-light"
+                   data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </a>
+            </div>
+        </div>
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped 
+                {% if item.priority == 'high' %}bg-warning{% elif item.priority == 'urgent' %}bg-danger{% elif item.priority == 'medium' %}bg-info{% else %}bg-success{% endif %}" 
+                role="progressbar" style="width: {{ item.progress }}%" aria-valuenow="{{ item.progress }}" aria-valuemin="0" aria-valuemax="100">
+            </div>
+        </div>
+    </div>
+</div>

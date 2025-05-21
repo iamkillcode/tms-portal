@@ -9,7 +9,8 @@ import csv
 from .models import (
     TenderTracker, Department, Tender, Category, UserProfile, 
     BreakfastItem, Order, OrderItem, Division, ISOTracker, ISONumber,
-    TenderItem, VendorBid, FrameworkAgreement, Vendor, Chemical, ChemicalSpecification
+    TenderItem, VendorBid, FrameworkAgreement, Vendor, Chemical, ChemicalSpecification,
+    Task, TaskCategory, TaskComment
 )
 
 # Customize admin site header and title
@@ -439,3 +440,47 @@ class ChemicalSpecificationAdmin(admin.ModelAdmin):
     list_display = ('chemical', 'spec_type', 'value', 'unit')
     list_filter = ('spec_type', 'chemical__grade')
     search_fields = ('chemical__chemical_name', 'value')
+
+
+class TaskCommentInline(admin.TabularInline):
+    model = TaskComment
+    extra = 0
+
+
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ('title', 'user', 'status', 'priority', 'due_date', 'created_at')
+    list_filter = ('status', 'priority', 'user')
+    search_fields = ('title', 'description', 'user__username', 'user__first_name', 'user__last_name')
+    date_hierarchy = 'created_at'
+    inlines = [TaskCommentInline]
+    
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'description', 'user', 'status', 'priority')
+        }),
+        ('Related Items', {
+            'fields': ('tender', 'vendor'),
+            'classes': ('collapse',)
+        }),
+        ('Dates', {
+            'fields': ('due_date',)
+        }),
+    )
+
+
+class TaskCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'color', 'user')
+    list_filter = ('user',)
+    search_fields = ('name', 'user__username')
+
+
+class TaskCommentAdmin(admin.ModelAdmin):
+    list_display = ('task', 'user', 'created_at')
+    list_filter = ('task__status', 'user')
+    search_fields = ('content', 'task__title', 'user__username')
+    date_hierarchy = 'created_at'
+
+
+admin.site.register(Task, TaskAdmin)
+admin.site.register(TaskCategory, TaskCategoryAdmin)
+admin.site.register(TaskComment, TaskCommentAdmin)

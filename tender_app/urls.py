@@ -59,4 +59,16 @@ urlpatterns = [
         path('<int:pk>/update/', views.chemical_update, name='chemical_update'),
         path('spec/<int:pk>/delete/', views.chemical_spec_delete, name='chemical_spec_delete'),
     ])),
+
+    # Task Management URLs
+    path('tasks/', include([
+        path('', views.task_list, name='task_list'),
+        path('dashboard/', views.task_dashboard, name='task_dashboard'),
+        path('create/', views.task_create, name='task_create'),
+        path('<int:pk>/', views.task_detail, name='task_detail'),
+        path('<int:pk>/update/', views.task_update, name='task_update'),
+        path('<int:pk>/delete/', views.task_delete, name='task_delete'),
+        path('<int:pk>/status/', views.task_status_update, name='task_status_update'),
+        path('categories/create/', views.task_category_create, name='task_category_create'),
+    ])),
 ]

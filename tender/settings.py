@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'widget_tweaks',  # Add this line
     'tender_app',
+    'todo_app',  # ToDo system app
 ]
 
 MIDDLEWARE = [

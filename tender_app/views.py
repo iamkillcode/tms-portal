@@ -8,12 +8,12 @@ from .models import (
     TenderTracker, Department, Category, Tender, TenderItem,
     VendorBid, FrameworkAgreement, Vendor, ISONumber, ISOTracker,
     Division, UserProfile, BreakfastItem, Order, OrderItem,
-    Chemical, ChemicalSpecification
+    Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment
 )
 from .forms import (
     CustomUserCreationForm, TenderItemForm, VendorBidForm,
     FrameworkAgreementForm, ChemicalForm, ChemicalSpecificationForm,
-    ChemicalImportForm
+    ChemicalImportForm, TaskForm, TaskCategoryForm, TaskCommentForm
 )
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -708,10 +708,7 @@ def framework_agreements_view(request, tender_id):
     agreements = tender.framework_agreements.all().select_related('vendor')
     
     # Get winning vendors from tender items
-    winning_vendors = Vendor.objects.filter(
-        vendorbid__tender=tender,
-        vendorbid__is_winner=True
-    ).distinct()
+    winning_vendors = Vendor.objects.all()
     
     if request.method == 'POST':
         form = FrameworkAgreementForm(request.POST)
@@ -877,3 +874,172 @@ def chemical_spec_delete(request, pk):
     spec.delete()
     messages.success(request, 'Specification deleted successfully.')
     return redirect('chemical_detail', pk=chemical_pk)
+
+
+# Task Management Views
+@login_required
+def task_list(request):
+    tasks = Task.objects.filter(user=request.user)
+    categories = TaskCategory.objects.filter(user=request.user)
+    
+    # Filter by status if provided
+    status_filter = request.GET.get('status')
+    if status_filter:
+        tasks = tasks.filter(status=status_filter)
+    
+    # Filter by priority if provided
+    priority_filter = request.GET.get('priority')
+    if priority_filter:
+        tasks = tasks.filter(priority=priority_filter)
+        
+    context = {
+        'tasks': tasks,
+        'categories': categories,
+        'task_form': TaskForm(initial={'user': request.user}),
+        'task_status_choices': Task.STATUS_CHOICES,
+        'task_priority_choices': Task.PRIORITY_CHOICES
+    }
+    return render(request, 'tender_app/task_list.html', context)
+
+
+@login_required
+def task_detail(request, pk):
+    task = get_object_or_404(Task, pk=pk, user=request.user)
+    comments = task.comments.all()
+    
+    if request.method == 'POST':
+        comment_form = TaskCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.task = task
+            comment.user = request.user
+            comment.save()
+            messages.success(request, 'Comment added successfully.')
+            return redirect('task_detail', pk=task.pk)
+    else:
+        comment_form = TaskCommentForm()
+    
+    context = {
+        'task': task,
+        'comments': comments,
+        'comment_form': comment_form
+    }
+    return render(request, 'tender_app/task_detail.html', context)
+
+
+@login_required
+def task_create(request):
+    if request.method == 'POST':
+        form = TaskForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.user = request.user
+            task.save()
+            messages.success(request, 'Task created successfully!')
+            return redirect('task_list')
+    else:
+        form = TaskForm(initial={
+            'tender': request.GET.get('tender'),
+            'vendor': request.GET.get('vendor')
+        })
+    
+    return render(request, 'tender_app/task_form.html', {
+        'form': form,
+        'action': 'Create'
+    })
+
+
+@login_required
+def task_update(request, pk):
+    task = get_object_or_404(Task, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Task updated successfully!')
+            return redirect('task_detail', pk=task.pk)
+    else:
+        form = TaskForm(instance=task)
+    
+    return render(request, 'tender_app/task_form.html', {
+        'form': form,
+        'task': task,
+        'action': 'Update'
+    })
+
+
+@login_required
+def task_delete(request, pk):
+    task = get_object_or_404(Task, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        task.delete()
+        messages.success(request, 'Task deleted successfully!')
+        return redirect('task_list')
+    
+    return render(request, 'tender_app/task_confirm_delete.html', {'task': task})
+
+
+@login_required
+def task_status_update(request, pk):
+    if request.method == 'POST':
+        task = get_object_or_404(Task, pk=pk, user=request.user)
+        status = request.POST.get('status')
+        
+        if status in dict(Task.STATUS_CHOICES).keys():
+            task.status = status
+            task.save()
+            return JsonResponse({'success': True, 'status': task.get_status_display()})
+    
+    return JsonResponse({'success': False}, status=400)
+
+
+@login_required
+def task_category_create(request):
+    if request.method == 'POST':
+        form = TaskCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save(commit=False)
+            category.user = request.user
+            category.save()
+            messages.success(request, 'Category created successfully!')
+            return redirect('task_list')
+    else:
+        form = TaskCategoryForm()
+    
+    return render(request, 'tender_app/task_category_form.html', {'form': form})
+
+
+@login_required
+def task_dashboard(request):
+    # Get tasks counts by status
+    pending_count = Task.objects.filter(user=request.user, status='pending').count()
+    in_progress_count = Task.objects.filter(user=request.user, status='in_progress').count()
+    completed_count = Task.objects.filter(user=request.user, status='completed').count()
+    
+    # Get tasks due soon (within 3 days)
+    today = datetime.now(timezone.utc)
+    due_soon = Task.objects.filter(
+        user=request.user,
+        due_date__gte=today,
+        due_date__lte=today + timedelta(days=3),
+        status__in=['pending', 'in_progress']
+    )
+    
+    # Get overdue tasks
+    overdue = Task.objects.filter(
+        user=request.user,
+        due_date__lt=today,
+        status__in=['pending', 'in_progress']
+    )
+    
+    context = {
+        'pending_count': pending_count,
+        'in_progress_count': in_progress_count,
+        'completed_count': completed_count,
+        'due_soon': due_soon,
+        'overdue': overdue,
+    }
+    
+    return render(request, 'tender_app/task_dashboard.html', context)

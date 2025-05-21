@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),  # Default Django admin
     path('', include('tender_app.urls')),  # Frontend URLs
+    path('todo/', include('todo_app.urls')),  # ToDo system URLs
 ]
 
 # Serve media and static files in development
