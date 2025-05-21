@@ -1,0 +1,280 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Base styles */
+.content-wrapper {
+    flex: 1 0 auto;
+    min-height: calc(100vh - 180px);
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Home page specific styles */
+.display-4 {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.lead {
+    color: #616161;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4A90E2;
+    border-color: #4A90E2;
+}
+
+.footer {
+    background-color: #f8f9fa;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* Auth wrapper styles */
+.auth-wrapper {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 0;
+}
+
+/* Card styling */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Form input styling */
+.input-group-text {
+    border-right: 0;
+}
+
+.form-control {
+    border-left: 0;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+}
+
+.form-control:disabled, 
+.form-control[readonly] {
+    background-color: #f8f9fa;
+}
+
+/* Button hover effect */
+.btn-primary:hover {
+    transform: translateY(-1px);
+    transition: transform 0.2s;
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 10px;
+}
+
+/* Tender Generator specific styles */
+.tender-form-container {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.generated-number {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn i {
+    margin-right: 0.5rem;
+}
+
+.modal-dialog-scrollable {
+    max-height: 90vh;
+}
+
+.modal-dialog-scrollable .modal-content {
+    max-height: calc(90vh - 60px);
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+/* Shop styles */
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+input[type="number"] {
+    width: 80px;
+}
+
+/* Order list styles */
+.badge {
+    font-size: 0.9em;
+    padding: 0.5em 0.8em;
+}
+
+/* Shop navigation styles */
+.nav-item .bi-shop {
+    font-size: 1.1em;
+    vertical-align: -0.125em;
+}
+
+.navbar .nav-link:hover {
+    color: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Active shop link */
+.navbar .nav-link.active {
+    font-weight: 500;
+    position: relative;
+}
+
+.navbar .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0.5rem;
+    right: 0.5rem;
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Shop image styles */
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-img-wrapper {
+    position: relative;
+    height: 200px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.card-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease-in-out;
+}
+
+.card-img-wrapper:hover img {
+    transform: scale(1.05);
+}
+
+.placeholder-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+}
+
+.placeholder-image i {
+    font-size: 3rem;
+    color: #adb5bd;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.card-title {
+    margin-bottom: 0.75rem;
+    color: #2c3e50;
+}
+
+.card-text {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.price-tag {
+    font-size: 1.25rem;
+    color: #28a745;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.card-img-wrapper {
+    position: relative;
+    padding-top: 56.25%;  /* 16:9 aspect ratio */
+    overflow: hidden;
+    background-color: #f8f9fa;
+}
+
+.card-img-wrapper img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.card-img-wrapper img:hover {
+    transform: scale(1.05);
+}
+
+.placeholder-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.placeholder-image i {
+    font-size: 3rem;
+}
