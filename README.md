@@ -281,11 +281,11 @@ For support or queries:
 - Address: Nelson Mandela Avenue, Accra
 
 ## License
-
-Copyright © 2025 FDA Ghana. All rights reserved.
+Copyright © 2025 Artemis Techologies. All rights reserved
 
 ## Contributors
 
-- FDA Ghana IT Department
-- Procurement Division
+- Emmanuel Oppong (killcode)
+- Elliot Sarpong Menkah
+- Procurement Unit
 - External Contributors (See GitHub contributors)

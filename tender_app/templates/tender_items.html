@@ -77,10 +77,9 @@
                             <td>{{ item.description }}</td>
                             <td>{{ item.quantity }}</td>
                             <td>{{ item.unit_of_measure }}</td>
-                            <td>{{ item.brand|default:'-' }}</td>
-                            <td>{{ item.manufacturer|default:'-' }}</td>
+                            <td>{{ item.brand|default:'-' }}</td>                            <td>{{ item.manufacturer|default:'-' }}</td>
                             <td>
-                                {% with winning_bid=item.vendorbid_set.filter.is_winner=True.first %}
+                                {% with winning_bid=item.vendorbid_set.filter(is_winner=True).first %}
                                     {% if winning_bid %}
                                         {{ winning_bid.vendor.name }}
                                         <br>
