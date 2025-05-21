@@ -176,9 +176,10 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
-CSRF_COOKIE_SECURE = True  # for HTTPS sites
-SESSION_COOKIE_SECURE = True  # for HTTPS sites
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# For development (HTTP), set to False; for production (HTTPS), set to True
+CSRF_COOKIE_SECURE = False  # Set to False for development with HTTP
+SESSION_COOKIE_SECURE = False  # Set to False for development with HTTP
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Uncomment in production
 
 # Email settings (update these with your email configuration)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # for development
