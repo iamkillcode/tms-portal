@@ -54,6 +54,13 @@ TMS streamlines the entire procurement process, from tender generation through v
 - Activity tracking
 - Secure authentication
 
+### 8. Audit Trail System
+- Comprehensive user activity logging
+- Filterable audit logs by user, action, and date
+- Record of all system interactions
+- IP address and user agent tracking
+- Exportable reports for compliance
+
 ## Technology Stack
 
 - **Backend:** Django 4.x
@@ -213,6 +220,16 @@ tms-portal/
 │   ├── migrations/        # ToDo database migrations
 │   └── templates/         # ToDo-specific templates
 │       └── todo_app/      # ToDo template files
+├── audit_trail/            # Audit trail system application
+│   ├── models.py          # Audit log models
+│   ├── middleware.py      # Automatic action logging
+│   ├── utils.py           # Logging utility functions
+│   ├── views.py           # Audit trail interface views
+│   ├── admin.py           # Admin interface customization
+│   ├── urls.py            # Audit trail URLs
+│   ├── migrations/        # Database migrations
+│   └── templates/         # Audit trail templates
+│       └── audit_trail/   # Template files
 ├── templates/              # Global templates
 │   ├── base.html          # Base template
 │   └── admin/             # Admin template overrides
@@ -263,6 +280,7 @@ tms-portal/
 - `/shop/` - Breakfast ordering system
 - `/reports/` - System reports
 - `/search/` - Global search functionality
+- `/audit-trail/` - Audit trail system for administrators
 
 ## Configuration
 
@@ -281,6 +299,8 @@ Key settings in `tender/settings.py`:
 - Password validation
 - Session security
 - XSS protection
+- Comprehensive audit trail system
+- User action logging and monitoring
 
 ## API Documentation
 

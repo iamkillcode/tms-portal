@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% block audit_title %}Audit Trail{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/audit-trail/' %}active{% endif %}" href="{% url 'audit_trail:dashboard' %}">
+                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'audit_trail:export_csv' %}">
+                            <i class="bi bi-file-earmark-excel me-2"></i> Export CSV
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'audit_trail:export_excel' %}">
+                            <i class="bi bi-file-earmark-spreadsheet me-2"></i> Export Excel
+                        </a>
+                    </li>
+                    <li class="nav-item mt-3">
+                        <h6 class="sidebar-heading px-3 text-muted">
+                            Quick Filters
+                        </h6>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'audit_trail:dashboard' %}?action_type=LOGIN">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Login Events
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'audit_trail:dashboard' %}?action_type=UPDATE">
+                            <i class="bi bi-pencil-square me-2"></i> Update Events
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'audit_trail:dashboard' %}?action_type=DELETE">
+                            <i class="bi bi-trash me-2"></i> Delete Events
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-10 ms-sm-auto">
+            <div class="px-4 py-5">
+                {% block audit_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

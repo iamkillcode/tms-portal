@@ -621,6 +621,40 @@ The system has several user roles with different permissions:
    - System configuration
    - Access to audit logs
 
+### Audit Trail System
+
+The TMS includes a comprehensive audit trail system that tracks all user activities across the application. This feature helps administrators monitor system usage, investigate issues, and maintain compliance.
+
+1. **Accessing the Audit Trail**
+   - From main menu, click "Admin" > "Audit Trail"
+   - Or navigate to /audit-trail/ directly
+   - View chronological log of system activities
+
+2. **Filtering Audit Logs**
+   - Filter by user to see a specific user's activities
+   - Filter by action type (Create, Update, Delete, View, etc.)
+   - Filter by application or model (Tender, ISO, ToDo, etc.)
+   - Set date range to view activities in a specific time period
+   - Use search box for keyword searches
+
+3. **Understanding Log Entries**
+   - Each entry shows timestamp, user, action type, and object affected
+   - View IP address and user agent (browser/device)
+   - Detailed information about the specific action taken
+   - Related application and model information
+
+4. **Exporting Audit Logs**
+   - Click "Export as CSV" or "Export as Excel" buttons
+   - Current filters will be applied to the export
+   - Use exports for record-keeping or compliance reporting
+   - Full audit history preserved for system accountability
+
+5. **Security and Privacy**
+   - Only administrators can access the audit trail
+   - Sensitive information is protected
+   - Logs cannot be modified or deleted
+   - Complete history maintained for compliance purposes
+
 ## Breakfast Ordering System
 
 ### Browsing Available Items
