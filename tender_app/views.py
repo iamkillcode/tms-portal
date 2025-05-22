@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from datetime import datetime, timezone  # For Python's built-in timezone
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import AuthenticationForm
 from .models import (
     TenderTracker, Department, Category, Tender, TenderItem,
@@ -37,6 +37,32 @@ from django.views.generic import DetailView
 from .models import Tender
 import pandas as pd
 
+def has_admin_role(user):
+    if user.is_superuser:
+        return True
+    allowed_groups = {'Admin', 'Head of Department', 'Head of Unit'}
+    user_groups = set(user.groups.values_list('name', flat=True))
+    return bool(allowed_groups & user_groups)
+
+def has_user_role(user):
+    if has_admin_role(user):
+        return True
+    allowed_groups = {'Team Lead', 'Officer'}
+    user_groups = set(user.groups.values_list('name', flat=True))
+    return bool(allowed_groups & user_groups)
+
+# Example usage for an admin-only view:
+@user_passes_test(has_admin_role)
+def admin_dashboard_view(request):
+    # ...existing code for admin dashboard...
+    pass
+
+# Example usage for a user-level view:
+@user_passes_test(has_user_role)
+def user_dashboard_view(request):
+    # ...existing code for user dashboard...
+    pass
+
 # def create_missing_profiles():
 #     for user in User.objects.all():
 #         if not hasattr(user, 'profile'):
@@ -50,6 +76,7 @@ import pandas as pd
 
 # Tender number generator view
 @login_required
+@user_passes_test(has_user_role)
 def tender_generator_view(request):
     # Ensure user has a profile
     if not hasattr(request.user, 'profile'):
@@ -195,6 +222,7 @@ def home_view(request):
     return redirect('login')
 
 @login_required
+@user_passes_test(has_user_role)
 def tender_activity_view(request):
     search_query = request.GET.get('search', '')
     
@@ -219,6 +247,7 @@ def tender_activity_view(request):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def tender_list_view(request):
     search_query = request.GET.get('search', '')
     
@@ -242,6 +271,7 @@ def tender_list_view(request):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def tender_update_view(request, tender_id):
     tender = get_object_or_404(Tender, id=tender_id)
     
@@ -264,6 +294,7 @@ def tender_update_view(request, tender_id):
     return redirect('tender-list')
 
 @login_required
+@user_passes_test(has_admin_role)
 def export_tenders_view(request):
     # Create workbook
     wb = openpyxl.Workbook()
@@ -381,16 +412,19 @@ def export_tenders_view(request):
     return response
 
 @login_required
+@user_passes_test(has_user_role)
 def shop_view(request):
     breakfast_items = BreakfastItem.objects.filter(available=True)
     return render(request, 'shop.html', {'breakfast_items': breakfast_items})
 
 @login_required
+@user_passes_test(has_user_role)
 def order_list_view(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'order_list.html', {'orders': orders})
 
 @login_required
+@user_passes_test(has_user_role)
 def add_to_order_view(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(BreakfastItem, id=item_id)
@@ -422,6 +456,7 @@ def add_to_order_view(request, item_id):
     return redirect('shop')
 
 @login_required
+@user_passes_test(has_user_role)
 def iso_generator_view(request, tender_id=None):
     if tender_id:
         tender = get_object_or_404(Tender, id=tender_id)
@@ -484,11 +519,13 @@ def iso_generator_view(request, tender_id=None):
     return render(request, 'iso_generator.html', context)
 
 @login_required
+@user_passes_test(has_user_role)
 def iso_detail_view(request, iso_id):
     iso = get_object_or_404(ISONumber, id=iso_id)
     return render(request, 'iso_detail.html', {'iso': iso})
 
 @login_required
+@user_passes_test(has_user_role)
 def iso_list_view(request):
     isos = ISONumber.objects.all().order_by('-date_created')
     search_query = request.GET.get('search', '')
@@ -511,6 +548,7 @@ def iso_list_view(request):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def dashboard_view(request):
     # Get counts
     total_tenders = Tender.objects.count()
@@ -547,6 +585,7 @@ class TenderDetailView(DetailView):
     context_object_name = 'tender'
 
 @login_required
+@user_passes_test(has_user_role)
 def search_view(request):
     search_query = request.GET.get('search', '')
     
@@ -575,6 +614,7 @@ def search_view(request):
     })
 
 @login_required
+@user_passes_test(has_admin_role)
 def reports_view(request):
     # Get overall statistics
     total_tenders = Tender.objects.count()
@@ -615,6 +655,7 @@ def reports_view(request):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def tender_items_view(request, tender_id):
     tender = get_object_or_404(Tender, id=tender_id)
     items = tender.items.all().prefetch_related('vendorbid_set', 'vendorbid_set__vendor')
@@ -637,6 +678,7 @@ def tender_items_view(request, tender_id):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def edit_tender_item_view(request, tender_id, item_id):
     tender = get_object_or_404(Tender, id=tender_id)
     item = get_object_or_404(TenderItem, id=item_id, tender=tender)
@@ -651,6 +693,7 @@ def edit_tender_item_view(request, tender_id, item_id):
     return redirect('tender-items', tender_id=tender_id)
 
 @login_required
+@user_passes_test(has_user_role)
 def vendor_bids_view(request, tender_id, item_id):
     tender = get_object_or_404(Tender, id=tender_id)
     item = get_object_or_404(TenderItem, id=item_id, tender=tender)
@@ -683,6 +726,7 @@ def vendor_bids_view(request, tender_id, item_id):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def edit_vendor_bid_view(request, tender_id, item_id, bid_id):
     tender = get_object_or_404(Tender, id=tender_id)
     item = get_object_or_404(TenderItem, id=item_id, tender=tender)
@@ -703,6 +747,7 @@ def edit_vendor_bid_view(request, tender_id, item_id, bid_id):
     return redirect('vendor-bids', tender_id=tender_id, item_id=item_id)
 
 @login_required
+@user_passes_test(has_user_role)
 def framework_agreements_view(request, tender_id):
     tender = get_object_or_404(Tender, id=tender_id)
     agreements = tender.framework_agreements.all().select_related('vendor')
@@ -729,6 +774,7 @@ def framework_agreements_view(request, tender_id):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def edit_framework_agreement_view(request, tender_id, agreement_id):
     tender = get_object_or_404(Tender, id=tender_id)
     agreement = get_object_or_404(FrameworkAgreement, id=agreement_id, tender=tender)
@@ -743,6 +789,7 @@ def edit_framework_agreement_view(request, tender_id, agreement_id):
     return redirect('framework-agreements', tender_id=tender_id)
 
 @login_required
+@user_passes_test(has_user_role)
 def chemical_list(request):
     chemicals = Chemical.objects.all().select_related('tender_item__tender')
     
@@ -774,6 +821,7 @@ def chemical_list(request):
     return render(request, 'tender_app/chemical_list.html', context)
 
 @login_required
+@user_passes_test(has_user_role)
 def chemical_create(request):
     if request.method == 'POST':
         form = ChemicalForm(request.POST)
@@ -787,6 +835,7 @@ def chemical_create(request):
     return render(request, 'tender_app/chemical_form.html', {'form': form, 'title': 'Create Chemical'})
 
 @login_required
+@user_passes_test(has_user_role)
 def chemical_detail(request, pk):
     chemical = get_object_or_404(Chemical, pk=pk)
     spec_form = ChemicalSpecificationForm()
@@ -808,6 +857,7 @@ def chemical_detail(request, pk):
     return render(request, 'tender_app/chemical_detail.html', context)
 
 @login_required
+@user_passes_test(has_user_role)
 def chemical_update(request, pk):
     chemical = get_object_or_404(Chemical, pk=pk)
     if request.method == 'POST':
@@ -822,6 +872,7 @@ def chemical_update(request, pk):
     return render(request, 'tender_app/chemical_form.html', {'form': form, 'title': 'Update Chemical'})
 
 @login_required
+@user_passes_test(has_user_role)
 def chemical_import(request):
     if request.method == 'POST':
         form = ChemicalImportForm(request.POST, request.FILES)
@@ -868,6 +919,7 @@ def chemical_import(request):
     return render(request, 'tender_app/chemical_import.html', {'form': form})
 
 @login_required
+@user_passes_test(has_user_role)
 def chemical_spec_delete(request, pk):
     spec = get_object_or_404(ChemicalSpecification, pk=pk)
     chemical_pk = spec.chemical.pk
@@ -878,6 +930,7 @@ def chemical_spec_delete(request, pk):
 
 # Task Management Views
 @login_required
+@user_passes_test(has_user_role)
 def task_list(request):
     tasks = Task.objects.filter(user=request.user)
     categories = TaskCategory.objects.filter(user=request.user)
@@ -903,6 +956,7 @@ def task_list(request):
 
 
 @login_required
+@user_passes_test(has_user_role)
 def task_detail(request, pk):
     task = get_object_or_404(Task, pk=pk, user=request.user)
     comments = task.comments.all()
@@ -928,6 +982,7 @@ def task_detail(request, pk):
 
 
 @login_required
+@user_passes_test(has_user_role)
 def task_create(request):
     if request.method == 'POST':
         form = TaskForm(request.POST)
@@ -950,6 +1005,7 @@ def task_create(request):
 
 
 @login_required
+@user_passes_test(has_user_role)
 def task_update(request, pk):
     task = get_object_or_404(Task, pk=pk, user=request.user)
     
@@ -970,6 +1026,7 @@ def task_update(request, pk):
 
 
 @login_required
+@user_passes_test(has_user_role)
 def task_delete(request, pk):
     task = get_object_or_404(Task, pk=pk, user=request.user)
     
@@ -982,6 +1039,7 @@ def task_delete(request, pk):
 
 
 @login_required
+@user_passes_test(has_user_role)
 def task_status_update(request, pk):
     if request.method == 'POST':
         task = get_object_or_404(Task, pk=pk, user=request.user)
@@ -996,6 +1054,7 @@ def task_status_update(request, pk):
 
 
 @login_required
+@user_passes_test(has_user_role)
 def task_category_create(request):
     if request.method == 'POST':
         form = TaskCategoryForm(request.POST)
@@ -1012,6 +1071,7 @@ def task_category_create(request):
 
 
 @login_required
+@user_passes_test(has_user_role)
 def task_dashboard(request):
     # Get tasks counts by status
     pending_count = Task.objects.filter(user=request.user, status='pending').count()

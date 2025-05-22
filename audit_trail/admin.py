@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import AuditLog
+from django.contrib.auth.models import Group
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
@@ -20,7 +21,16 @@ class AuditLogAdmin(admin.ModelAdmin):
     
     user_link.short_description = 'User'
     user_link.admin_order_field = 'user__username'
-    
+
+    def has_view_permission(self, request, obj=None):
+        # Superuser always has access (backdoor)
+        if request.user.is_superuser:
+            return True
+        # Allow Admin, Head of Department, Head of Unit
+        allowed_groups = {'Admin', 'Head of Department', 'Head of Unit'}
+        user_groups = set(request.user.groups.values_list('name', flat=True))
+        return bool(allowed_groups & user_groups)
+
     def has_add_permission(self, request):
         return False
     
