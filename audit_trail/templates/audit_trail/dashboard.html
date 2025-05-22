@@ -1,0 +1,237 @@
+{% extends 'audit_trail/base_audit.html' %}
+{% load static %}
+
+{% block audit_title %}Audit Trail Dashboard{% endblock %}
+
+{% block audit_content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Audit Trail Dashboard</h2>
+    
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold">Filter Audit Logs</h6>
+            <div>
+                <a href="{% url 'audit_trail:export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-file-earmark-excel"></i> Export as CSV
+                </a>
+                <a href="{% url 'audit_trail:export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Export as Excel
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <!-- Search Query -->
+                <div class="col-md-12">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search by user, IP, action details..." value="{{ search_query }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- User Filter -->
+                <div class="col-md-3">
+                    <label for="user_id" class="form-label">User</label>
+                    <select class="form-select" name="user_id" id="user_id">
+                        <option value="">All Users</option>
+                        {% for username, user_id in unique_users %}
+                            <option value="{{ user_id }}" {% if selected_user_id == user_id|stringformat:"i" %}selected{% endif %}>
+                                {{ username|default:"Anonymous" }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Action Type Filter -->
+                <div class="col-md-3">
+                    <label for="action_type" class="form-label">Action Type</label>
+                    <select class="form-select" name="action_type" id="action_type">
+                        <option value="">All Actions</option>
+                        {% for action in unique_action_types %}
+                            <option value="{{ action }}" {% if selected_action_type == action %}selected{% endif %}>
+                                {{ action }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- App Name Filter -->
+                <div class="col-md-3">
+                    <label for="app_name" class="form-label">Application</label>
+                    <select class="form-select" name="app_name" id="app_name">
+                        <option value="">All Applications</option>
+                        {% for app in unique_app_names %}
+                            <option value="{{ app }}" {% if selected_app_name == app %}selected{% endif %}>
+                                {{ app|default:"Unknown"|title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Model Name Filter -->
+                <div class="col-md-3">
+                    <label for="model_name" class="form-label">Model</label>
+                    <select class="form-select" name="model_name" id="model_name">
+                        <option value="">All Models</option>
+                        {% for model in unique_model_names %}
+                            <option value="{{ model }}" {% if selected_model_name == model %}selected{% endif %}>
+                                {{ model|default:"Unknown"|title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Date Range Filter -->
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" name="date_from" id="date_from" value="{{ date_from }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" name="date_to" id="date_to" value="{{ date_to }}">
+                </div>
+                
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-funnel"></i> Apply Filters
+                        </button>
+                        <a href="{% url 'audit_trail:dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Audit Logs Table -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Audit Log Entries</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Application</th>
+                            <th>Model</th>
+                            <th>Object</th>
+                            <th>IP Address</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in page_obj %}
+                        <tr>
+                            <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                            <td>{{ log.user.username|default:"Anonymous" }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if log.action_type == 'CREATE' %}bg-success
+                                    {% elif log.action_type == 'UPDATE' %}bg-primary
+                                    {% elif log.action_type == 'DELETE' %}bg-danger
+                                    {% elif log.action_type == 'VIEW' %}bg-info
+                                    {% elif log.action_type == 'LOGIN' %}bg-primary
+                                    {% elif log.action_type == 'LOGOUT' %}bg-secondary
+                                    {% elif log.action_type == 'EXPORT' %}bg-warning
+                                    {% else %}bg-secondary
+                                    {% endif %}">
+                                    {{ log.get_action_type_display }}
+                                </span>
+                            </td>
+                            <td>{{ log.app_name|default:"-"|title }}</td>
+                            <td>{{ log.model_name|default:"-"|title }}</td>
+                            <td>{{ log.object_repr|default:"-" }}</td>
+                            <td>{{ log.ip_address|default:"-" }}</td>
+                            <td>
+                                {% if log.action_detail %}
+                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailModal{{ log.id }}">
+                                    <i class="bi bi-info-circle"></i> Details
+                                </button>
+                                
+                                <!-- Detail Modal -->
+                                <div class="modal fade" id="detailModal{{ log.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Action Details</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>{{ log.action_detail }}</p>
+                                                {% if log.user_agent %}
+                                                <hr>
+                                                <h6>User Agent:</h6>
+                                                <p class="text-muted small">{{ log.user_agent }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">No audit logs found matching your filters.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

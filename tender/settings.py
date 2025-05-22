@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'widget_tweaks',  # Add this line
+    'audit_trail',  # Audit trail system
     'tender_app',
     'todo_app',  # ToDo system app
 ]
@@ -51,7 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    'audit_trail.middleware.AuditTrailMiddleware',  # Add this for audit logging
 ]
 
 ROOT_URLCONF = 'tender.urls'
