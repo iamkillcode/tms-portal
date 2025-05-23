@@ -1,21 +1,24 @@
-{% extends 'audit_trail/base_audit.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block audit_title %}Audit Trail Dashboard{% endblock %}
+{% block title %}FDA Ghana Audit Trail{% endblock %}
 
-{% block audit_content %}
+{% block content %}
 <div class="container-fluid py-4">
-    <h2 class="mb-4">Audit Trail Dashboard</h2>
+    <div class="d-flex align-items-center mb-4">
+        <img src="{% static 'images/FDA_dark_logo.png' %}" alt="FDA Ghana" height="50" class="me-3">
+        <h2 class="mb-0 text-fda-blue">FDA Ghana Audit Trail</h2>
+    </div>
     
     <!-- Filter Form -->
     <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold">Filter Audit Logs</h6>
+        <div class="card-header bg-fda-blue d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-fda-yellow">Filter Audit Logs</h6>
             <div>
-                <a href="{% url 'audit_trail:export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-secondary">
+                <a href="{% url 'audit_trail:export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-fda-yellow">
                     <i class="bi bi-file-earmark-excel"></i> Export as CSV
                 </a>
-                <a href="{% url 'audit_trail:export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
+                <a href="{% url 'audit_trail:export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-fda-blue border border-fda-yellow">
                     <i class="bi bi-file-earmark-spreadsheet"></i> Export as Excel
                 </a>
             </div>
@@ -111,13 +114,10 @@
     
     <!-- Audit Logs Table -->
     <div class="card shadow">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold">Audit Log Entries</h6>
-        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
-                    <thead>
+                    <thead class="bg-fda-blue text-fda-yellow">
                         <tr>
                             <th>Timestamp</th>
                             <th>User</th>
