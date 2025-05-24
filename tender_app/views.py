@@ -2,10 +2,19 @@ from django.shortcuts import render, redirect, get_object_or_404
 from datetime import datetime, timezone  # For Python's built-in timezone
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import AuthenticationForm
-from .models import TenderTracker, Department, Category, Tender
-from .forms import CustomUserCreationForm
+from .models import (
+    TenderTracker, Department, Category, Tender, TenderItem,
+    VendorBid, FrameworkAgreement, Vendor, ISONumber, ISOTracker,
+    Division, UserProfile, BreakfastItem, Order, OrderItem,
+    Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment
+)
+from .forms import (
+    CustomUserCreationForm, TenderItemForm, VendorBidForm,
+    FrameworkAgreementForm, ChemicalForm, ChemicalSpecificationForm,
+    ChemicalImportForm, TaskForm, TaskCategoryForm, TaskCommentForm
+)
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -26,6 +35,33 @@ from django.utils import timezone
 from datetime import timedelta
 from django.views.generic import DetailView
 from .models import Tender
+import pandas as pd
+
+def has_admin_role(user):
+    if user.is_superuser:
+        return True
+    allowed_groups = {'Admin', 'Head of Department', 'Head of Unit'}
+    user_groups = set(user.groups.values_list('name', flat=True))
+    return bool(allowed_groups & user_groups)
+
+def has_user_role(user):
+    if has_admin_role(user):
+        return True
+    allowed_groups = {'Team Lead', 'Officer'}
+    user_groups = set(user.groups.values_list('name', flat=True))
+    return bool(allowed_groups & user_groups)
+
+# Example usage for an admin-only view:
+@user_passes_test(has_admin_role)
+def admin_dashboard_view(request):
+    # ...existing code for admin dashboard...
+    pass
+
+# Example usage for a user-level view:
+@user_passes_test(has_user_role)
+def user_dashboard_view(request):
+    # ...existing code for user dashboard...
+    pass
 
 # def create_missing_profiles():
 #     for user in User.objects.all():
@@ -40,6 +76,7 @@ from .models import Tender
 
 # Tender number generator view
 @login_required
+@user_passes_test(has_user_role)
 def tender_generator_view(request):
     # Ensure user has a profile
     if not hasattr(request.user, 'profile'):
@@ -185,6 +222,7 @@ def home_view(request):
     return redirect('login')
 
 @login_required
+@user_passes_test(has_user_role)
 def tender_activity_view(request):
     search_query = request.GET.get('search', '')
     
@@ -209,6 +247,7 @@ def tender_activity_view(request):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def tender_list_view(request):
     search_query = request.GET.get('search', '')
     
@@ -232,6 +271,7 @@ def tender_list_view(request):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def tender_update_view(request, tender_id):
     tender = get_object_or_404(Tender, id=tender_id)
     
@@ -254,6 +294,7 @@ def tender_update_view(request, tender_id):
     return redirect('tender-list')
 
 @login_required
+@user_passes_test(has_admin_role)
 def export_tenders_view(request):
     # Create workbook
     wb = openpyxl.Workbook()
@@ -371,16 +412,19 @@ def export_tenders_view(request):
     return response
 
 @login_required
+@user_passes_test(has_user_role)
 def shop_view(request):
     breakfast_items = BreakfastItem.objects.filter(available=True)
     return render(request, 'shop.html', {'breakfast_items': breakfast_items})
 
 @login_required
+@user_passes_test(has_user_role)
 def order_list_view(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'order_list.html', {'orders': orders})
 
 @login_required
+@user_passes_test(has_user_role)
 def add_to_order_view(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(BreakfastItem, id=item_id)
@@ -412,6 +456,7 @@ def add_to_order_view(request, item_id):
     return redirect('shop')
 
 @login_required
+@user_passes_test(has_user_role)
 def iso_generator_view(request, tender_id=None):
     if tender_id:
         tender = get_object_or_404(Tender, id=tender_id)
@@ -474,11 +519,13 @@ def iso_generator_view(request, tender_id=None):
     return render(request, 'iso_generator.html', context)
 
 @login_required
+@user_passes_test(has_user_role)
 def iso_detail_view(request, iso_id):
     iso = get_object_or_404(ISONumber, id=iso_id)
     return render(request, 'iso_detail.html', {'iso': iso})
 
 @login_required
+@user_passes_test(has_user_role)
 def iso_list_view(request):
     isos = ISONumber.objects.all().order_by('-date_created')
     search_query = request.GET.get('search', '')
@@ -501,6 +548,7 @@ def iso_list_view(request):
     })
 
 @login_required
+@user_passes_test(has_user_role)
 def dashboard_view(request):
     # Get counts
     total_tenders = Tender.objects.count()
@@ -537,6 +585,7 @@ class TenderDetailView(DetailView):
     context_object_name = 'tender'
 
 @login_required
+@user_passes_test(has_user_role)
 def search_view(request):
     search_query = request.GET.get('search', '')
     
@@ -565,6 +614,7 @@ def search_view(request):
     })
 
 @login_required
+@user_passes_test(has_admin_role)
 def reports_view(request):
     # Get overall statistics
     total_tenders = Tender.objects.count()
@@ -603,3 +653,453 @@ def reports_view(request):
         'division_stats': division_stats,
         'monthly_tenders': monthly_tenders,
     })
+
+@login_required
+@user_passes_test(has_user_role)
+def tender_items_view(request, tender_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    items = tender.items.all().prefetch_related('vendorbid_set', 'vendorbid_set__vendor')
+    
+    if request.method == 'POST':
+        form = TenderItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.tender = tender
+            item.save()
+            messages.success(request, 'Item added successfully!')
+            return redirect('tender-items', tender_id=tender_id)
+    else:
+        form = TenderItemForm()
+    
+    return render(request, 'tender_items.html', {
+        'tender': tender,
+        'items': items,
+        'form': form
+    })
+
+@login_required
+@user_passes_test(has_user_role)
+def edit_tender_item_view(request, tender_id, item_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    item = get_object_or_404(TenderItem, id=item_id, tender=tender)
+    
+    if request.method == 'POST':
+        form = TenderItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Item updated successfully!')
+            return redirect('tender-items', tender_id=tender_id)
+    
+    return redirect('tender-items', tender_id=tender_id)
+
+@login_required
+@user_passes_test(has_user_role)
+def vendor_bids_view(request, tender_id, item_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    item = get_object_or_404(TenderItem, id=item_id, tender=tender)
+    bids = VendorBid.objects.filter(tender_item=item).select_related('vendor')
+    vendors = Vendor.objects.all()
+    
+    if request.method == 'POST':
+        form = VendorBidForm(request.POST)
+        if form.is_valid():
+            bid = form.save(commit=False)
+            bid.tender = tender
+            bid.tender_item = item
+            bid.save()
+            
+            if bid.is_winner:
+                # Set other bids for this item as non-winners
+                VendorBid.objects.filter(tender_item=item).exclude(id=bid.id).update(is_winner=False)
+            
+            messages.success(request, 'Bid recorded successfully!')
+            return redirect('vendor-bids', tender_id=tender_id, item_id=item_id)
+    else:
+        form = VendorBidForm()
+    
+    return render(request, 'vendor_bids.html', {
+        'tender': tender,
+        'item': item,
+        'bids': bids,
+        'vendors': vendors,
+        'form': form
+    })
+
+@login_required
+@user_passes_test(has_user_role)
+def edit_vendor_bid_view(request, tender_id, item_id, bid_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    item = get_object_or_404(TenderItem, id=item_id, tender=tender)
+    bid = get_object_or_404(VendorBid, id=bid_id, tender_item=item)
+    
+    if request.method == 'POST':
+        form = VendorBidForm(request.POST, instance=bid)
+        if form.is_valid():
+            bid = form.save()
+            
+            if bid.is_winner:
+                # Set other bids for this item as non-winners
+                VendorBid.objects.filter(tender_item=item).exclude(id=bid.id).update(is_winner=False)
+            
+            messages.success(request, 'Bid updated successfully!')
+            return redirect('vendor-bids', tender_id=tender_id, item_id=item_id)
+    
+    return redirect('vendor-bids', tender_id=tender_id, item_id=item_id)
+
+@login_required
+@user_passes_test(has_user_role)
+def framework_agreements_view(request, tender_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    agreements = tender.framework_agreements.all().select_related('vendor')
+    
+    # Get winning vendors from tender items
+    winning_vendors = Vendor.objects.all()
+    
+    if request.method == 'POST':
+        form = FrameworkAgreementForm(request.POST)
+        if form.is_valid():
+            agreement = form.save(commit=False)
+            agreement.tender = tender
+            agreement.save()
+            messages.success(request, 'Framework Agreement created successfully!')
+            return redirect('framework-agreements', tender_id=tender_id)
+    else:
+        form = FrameworkAgreementForm()
+    
+    return render(request, 'framework_agreements.html', {
+        'tender': tender,
+        'agreements': agreements,
+        'winning_vendors': winning_vendors,
+        'form': form
+    })
+
+@login_required
+@user_passes_test(has_user_role)
+def edit_framework_agreement_view(request, tender_id, agreement_id):
+    tender = get_object_or_404(Tender, id=tender_id)
+    agreement = get_object_or_404(FrameworkAgreement, id=agreement_id, tender=tender)
+    
+    if request.method == 'POST':
+        form = FrameworkAgreementForm(request.POST, instance=agreement)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Framework Agreement updated successfully!')
+            return redirect('framework-agreements', tender_id=tender_id)
+    
+    return redirect('framework-agreements', tender_id=tender_id)
+
+@login_required
+@user_passes_test(has_user_role)
+def chemical_list(request):
+    chemicals = Chemical.objects.all().select_related('tender_item__tender')
+    
+    # Filter by tender item if provided
+    tender_item_id = request.GET.get('tender_item')
+    if tender_item_id:
+        chemicals = chemicals.filter(tender_item_id=tender_item_id)
+    
+    # Search functionality
+    search_query = request.GET.get('search')
+    if search_query:
+        chemicals = chemicals.filter(
+            Q(chemical_name__icontains=search_query) |
+            Q(lot_number__icontains=search_query) |
+            Q(formula__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(chemicals, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'tender_items': TenderItem.objects.all(),
+        'search_query': search_query,
+        'tender_item_id': tender_item_id,
+    }
+    return render(request, 'tender_app/chemical_list.html', context)
+
+@login_required
+@user_passes_test(has_user_role)
+def chemical_create(request):
+    if request.method == 'POST':
+        form = ChemicalForm(request.POST)
+        if form.is_valid():
+            chemical = form.save()
+            messages.success(request, 'Chemical created successfully.')
+            return redirect('chemical_detail', pk=chemical.pk)
+    else:
+        form = ChemicalForm()
+    
+    return render(request, 'tender_app/chemical_form.html', {'form': form, 'title': 'Create Chemical'})
+
+@login_required
+@user_passes_test(has_user_role)
+def chemical_detail(request, pk):
+    chemical = get_object_or_404(Chemical, pk=pk)
+    spec_form = ChemicalSpecificationForm()
+    
+    if request.method == 'POST':
+        spec_form = ChemicalSpecificationForm(request.POST)
+        if spec_form.is_valid():
+            specification = spec_form.save(commit=False)
+            specification.chemical = chemical
+            specification.save()
+            messages.success(request, 'Specification added successfully.')
+            return redirect('chemical_detail', pk=pk)
+    
+    context = {
+        'chemical': chemical,
+        'spec_form': spec_form,
+        'specifications': chemical.specifications.all(),
+    }
+    return render(request, 'tender_app/chemical_detail.html', context)
+
+@login_required
+@user_passes_test(has_user_role)
+def chemical_update(request, pk):
+    chemical = get_object_or_404(Chemical, pk=pk)
+    if request.method == 'POST':
+        form = ChemicalForm(request.POST, instance=chemical)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Chemical updated successfully.')
+            return redirect('chemical_detail', pk=pk)
+    else:
+        form = ChemicalForm(instance=chemical)
+    
+    return render(request, 'tender_app/chemical_form.html', {'form': form, 'title': 'Update Chemical'})
+
+@login_required
+@user_passes_test(has_user_role)
+def chemical_import(request):
+    if request.method == 'POST':
+        form = ChemicalImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES['excel_file']
+            tender_item = form.cleaned_data['tender_item']
+            
+            try:
+                # Read Excel file
+                df = pd.read_excel(excel_file)
+                
+                for _, row in df.iterrows():
+                    # Create Chemical record
+                    chemical = Chemical.objects.create(
+                        tender_item=tender_item,
+                        chemical_name=row['chemical_name'],
+                        lot_number=row['lot_number'],
+                        formula=row.get('formula', ''),
+                        grade=row['grade'],
+                        package_size=row['package_size'],
+                        quantity=row['quantity']
+                    )
+                    
+                    # Create specifications if they exist
+                    spec_columns = ['molar_mass', 'density', 'purity', 'appearance']
+                    for spec_type in spec_columns:
+                        if spec_type in row and pd.notna(row[spec_type]):
+                            ChemicalSpecification.objects.create(
+                                chemical=chemical,
+                                spec_type=spec_type.upper(),
+                                value=str(row[spec_type]),
+                                unit=row.get(f'{spec_type}_unit', '')
+                            )
+                
+                messages.success(request, 'Chemicals imported successfully.')
+                return redirect('chemical_list')
+                
+            except Exception as e:
+                messages.error(request, f'Error importing chemicals: {str(e)}')
+                
+    else:
+        form = ChemicalImportForm()
+    
+    return render(request, 'tender_app/chemical_import.html', {'form': form})
+
+@login_required
+@user_passes_test(has_user_role)
+def chemical_spec_delete(request, pk):
+    spec = get_object_or_404(ChemicalSpecification, pk=pk)
+    chemical_pk = spec.chemical.pk
+    spec.delete()
+    messages.success(request, 'Specification deleted successfully.')
+    return redirect('chemical_detail', pk=chemical_pk)
+
+
+# Task Management Views
+@login_required
+@user_passes_test(has_user_role)
+def task_list(request):
+    tasks = Task.objects.filter(user=request.user)
+    categories = TaskCategory.objects.filter(user=request.user)
+    
+    # Filter by status if provided
+    status_filter = request.GET.get('status')
+    if status_filter:
+        tasks = tasks.filter(status=status_filter)
+    
+    # Filter by priority if provided
+    priority_filter = request.GET.get('priority')
+    if priority_filter:
+        tasks = tasks.filter(priority=priority_filter)
+        
+    context = {
+        'tasks': tasks,
+        'categories': categories,
+        'task_form': TaskForm(initial={'user': request.user}),
+        'task_status_choices': Task.STATUS_CHOICES,
+        'task_priority_choices': Task.PRIORITY_CHOICES
+    }
+    return render(request, 'tender_app/task_list.html', context)
+
+
+@login_required
+@user_passes_test(has_user_role)
+def task_detail(request, pk):
+    task = get_object_or_404(Task, pk=pk, user=request.user)
+    comments = task.comments.all()
+    
+    if request.method == 'POST':
+        comment_form = TaskCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.task = task
+            comment.user = request.user
+            comment.save()
+            messages.success(request, 'Comment added successfully.')
+            return redirect('task_detail', pk=task.pk)
+    else:
+        comment_form = TaskCommentForm()
+    
+    context = {
+        'task': task,
+        'comments': comments,
+        'comment_form': comment_form
+    }
+    return render(request, 'tender_app/task_detail.html', context)
+
+
+@login_required
+@user_passes_test(has_user_role)
+def task_create(request):
+    if request.method == 'POST':
+        form = TaskForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.user = request.user
+            task.save()
+            messages.success(request, 'Task created successfully!')
+            return redirect('task_list')
+    else:
+        form = TaskForm(initial={
+            'tender': request.GET.get('tender'),
+            'vendor': request.GET.get('vendor')
+        })
+    
+    return render(request, 'tender_app/task_form.html', {
+        'form': form,
+        'action': 'Create'
+    })
+
+
+@login_required
+@user_passes_test(has_user_role)
+def task_update(request, pk):
+    task = get_object_or_404(Task, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Task updated successfully!')
+            return redirect('task_detail', pk=task.pk)
+    else:
+        form = TaskForm(instance=task)
+    
+    return render(request, 'tender_app/task_form.html', {
+        'form': form,
+        'task': task,
+        'action': 'Update'
+    })
+
+
+@login_required
+@user_passes_test(has_user_role)
+def task_delete(request, pk):
+    task = get_object_or_404(Task, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        task.delete()
+        messages.success(request, 'Task deleted successfully!')
+        return redirect('task_list')
+    
+    return render(request, 'tender_app/task_confirm_delete.html', {'task': task})
+
+
+@login_required
+@user_passes_test(has_user_role)
+def task_status_update(request, pk):
+    if request.method == 'POST':
+        task = get_object_or_404(Task, pk=pk, user=request.user)
+        status = request.POST.get('status')
+        
+        if status in dict(Task.STATUS_CHOICES).keys():
+            task.status = status
+            task.save()
+            return JsonResponse({'success': True, 'status': task.get_status_display()})
+    
+    return JsonResponse({'success': False}, status=400)
+
+
+@login_required
+@user_passes_test(has_user_role)
+def task_category_create(request):
+    if request.method == 'POST':
+        form = TaskCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save(commit=False)
+            category.user = request.user
+            category.save()
+            messages.success(request, 'Category created successfully!')
+            return redirect('task_list')
+    else:
+        form = TaskCategoryForm()
+    
+    return render(request, 'tender_app/task_category_form.html', {'form': form})
+
+
+@login_required
+@user_passes_test(has_user_role)
+def task_dashboard(request):
+    # Get tasks counts by status
+    pending_count = Task.objects.filter(user=request.user, status='pending').count()
+    in_progress_count = Task.objects.filter(user=request.user, status='in_progress').count()
+    completed_count = Task.objects.filter(user=request.user, status='completed').count()
+    
+    # Get tasks due soon (within 3 days)
+    today = datetime.now(timezone.utc)
+    due_soon = Task.objects.filter(
+        user=request.user,
+        due_date__gte=today,
+        due_date__lte=today + timedelta(days=3),
+        status__in=['pending', 'in_progress']
+    )
+    
+    # Get overdue tasks
+    overdue = Task.objects.filter(
+        user=request.user,
+        due_date__lt=today,
+        status__in=['pending', 'in_progress']
+    )
+    
+    context = {
+        'pending_count': pending_count,
+        'in_progress_count': in_progress_count,
+        'completed_count': completed_count,
+        'due_soon': due_soon,
+        'overdue': overdue,
+    }
+    
+    return render(request, 'tender_app/task_dashboard.html', context)

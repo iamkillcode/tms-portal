@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Vendor Bids</h2>
+    <h4>{{ tender.tender_number }} - {{ item.item_name }}</h4>
+    <p class="text-muted">{{ item.description }}</p>
+
+    <!-- Add New Bid Form -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Add New Bid</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="vendor" class="form-label">Vendor</label>
+                            <select class="form-select" id="vendor" name="vendor" required>
+                                <option value="">Select Vendor</option>
+                                {% for vendor in vendors %}
+                                <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="unit_price" class="form-label">Unit Price</label>
+                            <input type="number" step="0.01" class="form-control" id="unit_price" name="unit_price" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="currency" class="form-label">Currency</label>
+                            <select class="form-select" id="currency" name="currency" required>
+                                <option value="GHS">GHS</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="technical_score" class="form-label">Technical Score</label>
+                            <input type="number" step="0.01" class="form-control" id="technical_score" name="technical_score">
+                        </div>
+                        <div class="mb-3">
+                            <label for="financial_score" class="form-label">Financial Score</label>
+                            <input type="number" step="0.01" class="form-control" id="financial_score" name="financial_score">
+                        </div>
+                        <div class="mb-3">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <textarea class="form-control" id="remarks" name="remarks" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_winner" name="is_winner">
+                            <label class="form-check-label" for="is_winner">Mark as Winner</label>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Bid</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bids List -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Submitted Bids</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Vendor</th>
+                            <th>Unit Price</th>
+                            <th>Total Price</th>
+                            <th>Technical Score</th>
+                            <th>Financial Score</th>
+                            <th>Total Score</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bid in bids %}
+                        <tr {% if bid.is_winner %}class="table-success"{% endif %}>
+                            <td>{{ bid.vendor.name }}</td>
+                            <td>{{ bid.currency }} {{ bid.unit_price }}</td>
+                            <td>{{ bid.currency }} {{ bid.total_price }}</td>
+                            <td>{{ bid.technical_score|default:'-' }}</td>
+                            <td>{{ bid.financial_score|default:'-' }}</td>
+                            <td>{{ bid.total_score|default:'-' }}</td>
+                            <td>
+                                {% if bid.is_winner %}
+                                <span class="badge bg-success">Winner</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-warning" 
+                                        data-bs-toggle="modal" data-bs-target="#editBid{{ bid.id }}">
+                                    Edit
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No bids submitted yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Bid Modals -->
+{% for bid in bids %}
+<div class="modal fade" id="editBid{{ bid.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'edit-vendor-bid' tender.id item.id bid.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Bid - {{ bid.vendor.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Unit Price</label>
+                            <input type="number" step="0.01" name="unit_price" class="form-control" 
+                                   value="{{ bid.unit_price }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Currency</label>
+                            <select class="form-select" name="currency">
+                                <option value="GHS" {% if bid.currency == 'GHS' %}selected{% endif %}>GHS</option>
+                                <option value="USD" {% if bid.currency == 'USD' %}selected{% endif %}>USD</option>
+                                <option value="EUR" {% if bid.currency == 'EUR' %}selected{% endif %}>EUR</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Technical Score</label>
+                            <input type="number" step="0.01" name="technical_score" class="form-control" 
+                                   value="{{ bid.technical_score }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Financial Score</label>
+                            <input type="number" step="0.01" name="financial_score" class="form-control" 
+                                   value="{{ bid.financial_score }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Remarks</label>
+                            <textarea name="remarks" class="form-control" rows="3">{{ bid.remarks }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_winner" 
+                                       {% if bid.is_winner %}checked{% endif %}>
+                                <label class="form-check-label">Mark as Winner</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

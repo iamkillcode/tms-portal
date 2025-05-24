@@ -1,0 +1,53 @@
+{% extends 'todo_app/base_todo.html' %}
+{% load static %}
+
+{% block title %}Delete Item | ToDo | {{ block.super }}{% endblock %}
+
+{% block todo_title %}Delete Task{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'todo_list_view' %}">Lists</a></li>
+<li class="breadcrumb-item">
+    <a href="{% url 'todo_list_detail' list_id=item.todo_list.id %}">{{ item.todo_list.name }}</a>
+</li>
+<li class="breadcrumb-item">
+    <a href="{% url 'todo_item_detail' item_id=item.id %}">{{ item.title }}</a>
+</li>
+<li class="breadcrumb-item active">Delete</li>
+{% endblock %}
+
+{% block todo_content %}
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Confirm Deletion</h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">Are you sure you want to delete the following task?</p>
+                
+                <div class="alert alert-warning">
+                    <h5 class="mb-1">{{ item.title }}</h5>
+                    <p class="mb-1"><strong>Status:</strong> {{ item.get_status_display }}</p>
+                    <p class="mb-1"><strong>Priority:</strong> {{ item.get_priority_display }}</p>
+                    {% if item.due_date %}
+                        <p class="mb-0"><strong>Due Date:</strong> {{ item.due_date|date:"M d, Y H:i" }}</p>
+                    {% endif %}
+                </div>
+                
+                <p class="text-danger">This action cannot be undone.</p>
+                
+                <form method="post" action="{% url 'todo_item_delete' item_id=item.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'todo_item_detail' item_id=item.id %}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-danger">Delete Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

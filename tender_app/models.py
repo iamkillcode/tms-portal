@@ -201,6 +201,106 @@ class ISONumber(models.Model):
         return self.iso_number
 
 
+class Vendor(models.Model):
+    name = models.CharField(max_length=255)
+    address = models.TextField()
+    contact_person = models.CharField(max_length=255)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class FrameworkAgreement(models.Model):
+    tender = models.ForeignKey('Tender', on_delete=models.CASCADE, related_name='framework_agreements')
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='framework_agreements')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    agreement_number = models.CharField(max_length=100, unique=True)
+    status = models.CharField(max_length=50, choices=[
+        ('active', 'Active'),
+        ('expired', 'Expired'),
+        ('terminated', 'Terminated')
+    ])
+    terms_conditions = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.agreement_number} - {self.vendor.name}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class TenderItem(models.Model):
+    tender = models.ForeignKey('Tender', on_delete=models.CASCADE, related_name='items')
+    item_name = models.CharField(max_length=255)
+    description = models.TextField()
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_of_measure = models.CharField(max_length=50)
+    
+    # Chemical-specific fields
+    chemical_grade = models.CharField(max_length=255, blank=True, null=True, help_text="e.g., HPLC Grade, Analytical Reagent Grade")
+    molar_mass = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., 88.11 g/mol")
+    chemical_formula = models.CharField(max_length=255, blank=True, null=True, help_text="e.g., CH3COCH3")
+    density = models.CharField(max_length=100, blank=True, null=True, help_text="e.g., 0.791 g/mL at 25°C")
+    vapor_density = models.CharField(max_length=100, blank=True, null=True, help_text="e.g., 2 (vs air)")
+    assay_percentage = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., ≥99.8%")
+    physical_form = models.CharField(max_length=100, blank=True, null=True, help_text="e.g., Solvent, Powder, Crystal")
+    package_size = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., 2.5L, 500ml")
+    appearance = models.CharField(max_length=255, blank=True, null=True, help_text="e.g., Colorless liquid")
+    impurities = models.TextField(blank=True, null=True, help_text="List of impurity limits")
+    specifications = models.TextField(blank=True, null=True)
+    
+    # Existing fields
+    brand = models.CharField(max_length=255, blank=True, null=True)
+    manufacturer = models.CharField(max_length=255, blank=True, null=True)
+    specifications = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.item_name} - {self.tender.tender_number}"
+
+    class Meta:
+        ordering = ['item_name']
+
+
+class VendorBid(models.Model):
+    tender = models.ForeignKey('Tender', on_delete=models.CASCADE, related_name='bids')
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    tender_item = models.ForeignKey(TenderItem, on_delete=models.CASCADE)
+    unit_price = models.DecimalField(max_digits=15, decimal_places=2)
+    total_price = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3, default='GHS')  # ISO currency code
+    is_winner = models.BooleanField(default=False)
+    technical_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    financial_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    total_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Auto-calculate total price if unit price and quantity change
+        self.total_price = self.unit_price * self.tender_item.quantity
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.vendor.name} - {self.tender_item.item_name}"
+
+    class Meta:
+        ordering = ['-total_score', 'total_price']
+        unique_together = ['tender', 'vendor', 'tender_item']
+
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -218,8 +318,6 @@ def save_user_profile(sender, instance, **kwargs):
         )
     else:
         instance.profile.save()
-
-
 
 def create_divisions(apps, schema_editor):
     Division = apps.get_model('tender_app', 'Division')
@@ -244,4 +342,122 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(create_divisions),
     ]
+
+class Chemical(models.Model):
+    CHEMICAL_GRADES = [
+        ('HPLC', 'High Performance Liquid Chromatography Grade'),
+        ('AR', 'Analytical Reagent Grade'),
+        ('GC', 'Gas Chromatography Grade'),
+        ('USP', 'United States Pharmacopeia Grade'),
+        ('ACS', 'American Chemical Society Grade'),
+        ('TECH', 'Technical Grade'),
+        ('GEN', 'General Purpose Reagent Grade'),
+    ]
+
+    lot_number = models.CharField(max_length=10)
+    chemical_name = models.CharField(max_length=255)
+    formula = models.CharField(max_length=100, blank=True)
+    grade = models.CharField(max_length=10, choices=CHEMICAL_GRADES)
+    package_size = models.CharField(max_length=50)
+    quantity = models.IntegerField()
+    tender_item = models.ForeignKey('TenderItem', on_delete=models.CASCADE, related_name='chemicals')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.chemical_name} ({self.lot_number})"
+
+    class Meta:
+        ordering = ['chemical_name', 'lot_number']
+
+
+class ChemicalSpecification(models.Model):
+    SPEC_TYPES = [
+        ('MOLAR_MASS', 'Molar Mass'),
+        ('DENSITY', 'Density'),
+        ('ASSAY', 'Assay'),
+        ('PURITY', 'Purity'),
+        ('APPEARANCE', 'Appearance'),
+        ('VAPOR_DENSITY', 'Vapor Density'),
+        ('IMPURITY', 'Impurity Limit'),
+        ('PH', 'pH'),
+        ('BOILING_POINT', 'Boiling Point'),
+        ('FLASH_POINT', 'Flash Point'),
+        ('SOLUBILITY', 'Solubility'),
+        ('OTHER', 'Other'),
+    ]
+
+    chemical = models.ForeignKey(Chemical, on_delete=models.CASCADE, related_name='specifications')
+    spec_type = models.CharField(max_length=20, choices=SPEC_TYPES)
+    value = models.CharField(max_length=255)
+    unit = models.CharField(max_length=50, blank=True)
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.chemical.chemical_name} - {self.get_spec_type_display()}: {self.value} {self.unit}"
+
+    class Meta:
+        ordering = ['chemical', 'spec_type']
+        unique_together = ['chemical', 'spec_type']
+
+
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    
+    # Optional relationships to other models
+    tender = models.ForeignKey(Tender, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
+    vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
+    
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        ordering = ['-priority', 'due_date', '-created_at']
+
+
+class TaskCategory(models.Model):
+    name = models.CharField(max_length=100)
+    color = models.CharField(max_length=7, default="#007bff", help_text="Hex color code")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_categories')
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name_plural = "Task Categories"
+        unique_together = ['name', 'user']
+
+
+class TaskComment(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Comment on {self.task.title} by {self.user.username}"
+    
+    class Meta:
+        ordering = ['created_at']
 

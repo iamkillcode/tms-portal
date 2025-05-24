@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registration Disabled - FDA Ghana Tender Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-wrapper {
+        background: linear-gradient(rgba(47, 49, 146, 0.9), rgba(47, 49, 146, 0.7)), 
+                    url("{% static 'images/fda-ghana.webp' %}") no-repeat center center;
+        background-size: cover;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+    
+    .message-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .message-header {
+        background: linear-gradient(135deg, #2f3192 0%, #1a1c6b 100%);
+        color: white;
+        padding: 25px 20px;
+        text-align: center;
+    }
+    
+    .fda-logo {
+        width: 120px;
+        height: auto;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="message-card shadow">
+                    <div class="message-header">
+                        <img src="{% static 'images/FDA_dark_logo.png' %}" alt="FDA Ghana" class="fda-logo">
+                        <h3 class="mb-0">FDA Ghana</h3>
+                        <p class="mb-0 text-fda-yellow">Tender Management System</p>
+                    </div>
+                    
+                    <div class="card-body p-4 bg-white">
+                        <div class="text-center">
+                            <i class="bi bi-shield-lock text-danger" style="font-size: 3rem;"></i>
+                            <h4 class="mt-3 mb-4 text-fda-blue">Registration Disabled</h4>
+                            <p class="mb-4">User registration through the frontend is disabled. User accounts are managed by administrators only.</p>
+                            <p class="mb-4">Please contact system administrators to request an account.</p>
+                            
+                            <a href="{% url 'login' %}" class="btn btn-fda-blue py-2 px-4">
+                                Return to Login
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3 text-white">
+                    <small>&copy; {% now "Y" %} Food and Drugs Authority Ghana</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

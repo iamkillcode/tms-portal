@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ToDo | {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom CSS for ToDo app */
+    .todo-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-bottom: 15px;
+    }
+    
+    .todo-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .priority-low {
+        border-left: 4px solid #28a745;
+    }
+    
+    .priority-medium {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .priority-high {
+        border-left: 4px solid #fd7e14;
+    }
+    
+    .priority-urgent {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .status-completed {
+        opacity: 0.65;
+    }
+    
+    .status-completed .todo-title {
+        text-decoration: line-through;
+    }
+    
+    .todo-due-date {
+        font-size: 0.8rem;
+    }
+    
+    .todo-due-date.overdue {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .progress {
+        height: 5px;
+        margin-top: 10px;
+    }
+    
+    /* Todo List styling */
+    .todo-list-header {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .list-color-indicator {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    /* Calendar styling */
+    .calendar-day {
+        min-height: 100px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .calendar-day-header {
+        font-weight: bold;
+        text-align: center;
+        padding: 5px;
+        background-color: #f8f9fa;
+    }
+    
+    .calendar-item {
+        margin: 2px;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        color: white;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Tags */
+    .todo-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    /* Pinned items */
+    .is-pinned {
+        position: relative;
+    }
+    
+    .is-pinned::after {
+        content: "📌";
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        font-size: 16px;
+    }
+    
+    /* Flagged items */
+    .is-flagged {
+        position: relative;
+    }
+    
+    .is-flagged::before {
+        content: "🚩";
+        position: absolute;
+        top: 5px;
+        right: 25px;
+        font-size: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-3 col-lg-2">
+            <!-- Sidebar -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">ToDo Navigation</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'todo_dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'todo_dashboard' %}active{% endif %}">
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'todo_list_view' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'todo_list_view' %}active{% endif %}">
+                        <i class="bi bi-list-ul me-2"></i> My Lists
+                    </a>
+                    <a href="{% url 'todo_item_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'todo_item_create' %}active{% endif %}">
+                        <i class="bi bi-plus-circle me-2"></i> New Task
+                    </a>
+                    <a href="{% url 'todo_calendar' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'todo_calendar' %}active{% endif %}">
+                        <i class="bi bi-calendar-week me-2"></i> Calendar
+                    </a>
+                    <a href="{% url 'todo_export' %}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-download me-2"></i> Export Tasks
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Quick Tasks -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Quick Add</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'todo_item_create' %}" class="mb-0">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        
+                        <div class="mb-3">
+                            <input type="text" name="title" class="form-control" placeholder="Task title" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <select name="priority" class="form-select">
+                                <option value="low">Low Priority</option>
+                                <option value="medium" selected>Medium Priority</option>
+                                <option value="high">High Priority</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-circle me-1"></i> Add Task
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9 col-lg-10">
+            <!-- Page Content -->
+            <div class="row mb-3">
+                <div class="col">
+                    <h1 class="mb-0">{% block todo_title %}ToDo System{% endblock %}</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'todo_dashboard' %}">ToDo</a></li>
+                            {% block breadcrumbs %}{% endblock %}
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+            
+            {% if messages %}
+            <div class="row">
+                <div class="col">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% block todo_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Status toggle handling via AJAX
+        document.querySelectorAll('.status-toggle').forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                const itemId = this.dataset.itemId;
+                const newStatus = this.checked ? 'completed' : 'not_started';
+                const todoCard = document.querySelector(`#todo-card-${itemId}`);
+                
+                fetch(`/todo/items/${itemId}/status/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (newStatus === 'completed') {
+                            todoCard.classList.add('status-completed');
+                        } else {
+                            todoCard.classList.remove('status-completed');
+                        }
+                        
+                        // Update progress bar
+                        const progressBar = todoCard.querySelector('.progress-bar');
+                        if (progressBar) {
+                            progressBar.style.width = `${data.progress}%`;
+                            progressBar.setAttribute('aria-valuenow', data.progress);
+                        }
+                    } else {
+                        // Revert checkbox if there was an error
+                        this.checked = !this.checked;
+                        alert('Error updating status: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    this.checked = !this.checked;
+                    alert('Error updating status. Please try again.');
+                });
+            });
+        });
+        
+        // Enable Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}

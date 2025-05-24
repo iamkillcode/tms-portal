@@ -10,16 +10,15 @@
     <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<body class="bg-light">    <nav class="navbar navbar-expand-lg bg-fda-blue">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'login' %}">
-                <i class="bi bi-file-earmark-text"></i> TMS
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="{% static 'images/FDA_dark_logo.png' %}" alt="FDA Ghana" height="40" class="me-2">
+                <span class="fw-bold text-fda-yellow">FDA Ghana TMS</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     {% if user.is_authenticated %}
@@ -32,8 +31,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="documentDropdown" role="button" data-bs-toggle="dropdown">
                            <i class="bi bi-file-earmark-text"></i> Documents
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="documentDropdown">
+                        </a>                        <ul class="dropdown-menu" aria-labelledby="documentDropdown">
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'tender-generator' %}active{% endif %}" 
                                    href="{% url 'tender-generator' %}">
@@ -44,6 +42,12 @@
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'tender-list' %}active{% endif %}" 
                                    href="{% url 'tender-list' %}">
                                    <i class="bi bi-list-ul"></i> Tender List
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'tender-activity' %}active{% endif %}" 
+                                   href="{% url 'tender-activity' %}">
+                                   <i class="bi bi-activity"></i> Tender Activity
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -59,6 +63,34 @@
                                    <i class="bi bi-file-text"></i> ISO List
                                 </a>
                             </li>
+                        </ul>                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="tenderManagementDropdown" role="button" data-bs-toggle="dropdown">
+                           <i class="bi bi-briefcase"></i> Tender Management
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="tenderManagementDropdown">
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'tender-items' %}active{% endif %}" 
+                                   href="{% url 'tender-list' %}">
+                                   <i class="bi bi-list-check"></i> Tender Items
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'chemical_list' or request.resolver_match.url_name == 'chemical_detail' %}active{% endif %}" 
+                                   href="{% url 'chemical_list' %}">
+                                   <i class="bi bi-flask"></i> Chemical Management
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'tender-list' %}">
+                                   <i class="bi bi-file-earmark-text"></i> Framework Agreements
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'tender-list' %}">
+                                   <i class="bi bi-people"></i> Vendor Management
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -72,11 +104,17 @@
                                    <i class="bi bi-shop"></i> Breakfast Shop
                                 </a>
                             </li>
+                            {% if user.is_staff %}
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'tender_activity' %}active{% endif %}" href="{% url 'audit_trail:tender_activity' %}">
+                                    <i class="bi bi-shield-check"></i> Audit Trail
+                                </a>
+                            </li>
+                            {% endif %}
                         </ul>
                     </li>
                     {% endif %}
                 </ul>
-                
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
@@ -92,11 +130,13 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            {% endif %}
-                            <li>
-                                <a class="dropdown-item" href="{% url 'logout' %}">
+                            {% endif %}                            <li>
+                                <a class="dropdown-item" href="{% url 'logout' %}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="bi bi-box-arrow-right"></i> Logout
                                 </a>
+                                <form id="logout-form" action="{% url 'logout' %}" method="POST" style="display: none;">
+                                    {% csrf_token %}
+                                </form>
                             </li>
                         </ul>
                     </li>
@@ -117,26 +157,24 @@
 
     <div class="content-wrapper">
         {% block content %}{% endblock %}
-    </div>
-    
-    <footer class="footer mt-auto py-3">
+    </div>    <footer class="footer mt-auto py-3 bg-fda-blue text-fda-yellow">
         <div class="container">
             <div class="row g-3">
-                <div class="col-md-6">
-                    <h6 class="mb-2"><i class="bi bi-building"></i> FDA Ghana</h6>
-                    <p class="text-muted mb-0 small">Tender Management System for streamlined procurement processes.</p>
+                <div class="col-md-6 d-flex align-items-center">
+                    <img src="{% static 'images/FDA_dark_logo.png' %}" alt="FDA Ghana" height="32" class="me-2">
+                    <h6 class="mb-0">FDA Ghana</h6>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <h6 class="mb-2">Contact</h6>
-                    <p class="text-muted mb-0 small">
+                    <p class="text-fda-yellow mb-0 small">
                         <i class="bi bi-envelope"></i> procurement@fda.gov.gh
                         <i class="bi bi-telephone ms-2"></i> (+233)302233200
                         <i class="bi bi-geo-alt ms-2"></i> Nelson Mandela Avenue, Accra
                     </p>
                 </div>
             </div>
-            <hr class="my-3 bg-secondary">
-            <div class="text-center text-muted">
+            <hr class="my-3 bg-fda-yellow">
+            <div class="text-center text-fda-yellow">
                 <small>&copy; {% now "Y" %} FDA Ghana - Tender Management System</small>
             </div>
         </div>

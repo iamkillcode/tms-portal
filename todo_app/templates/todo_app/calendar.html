@@ -1,0 +1,151 @@
+{% extends 'todo_app/base_todo.html' %}
+{% load static %}
+
+{% block title %}Calendar View | ToDo | {{ block.super }}{% endblock %}
+
+{% block todo_title %}Calendar View{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Calendar</li>
+{% endblock %}
+
+{% block todo_content %}
+<div class="card">
+    <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Task Calendar</h5>
+            <div>
+                <a href="{% url 'todo_item_create' %}?next=todo_calendar" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> New Task
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% now "F Y" as current_month_year %}
+        <h3 class="text-center mb-4">{{ current_month_year }}</h3>
+        
+        <div class="row">
+            <div class="col-md-1 text-center fw-bold">Sun</div>
+            <div class="col-md-1 text-center fw-bold">Mon</div>
+            <div class="col-md-1 text-center fw-bold">Tue</div>
+            <div class="col-md-1 text-center fw-bold">Wed</div>
+            <div class="col-md-1 text-center fw-bold">Thu</div>
+            <div class="col-md-1 text-center fw-bold">Fri</div>
+            <div class="col-md-1 text-center fw-bold">Sat</div>
+        </div>
+        
+        {% now "Y-m-d" as today %}
+        {% now "w" as current_weekday %}
+        {% now "Y" as current_year %}
+        {% now "m" as current_month %}
+        
+        <!-- Calendar days will be calculated in the view -->
+        <div class="row border-top border-start mt-2">
+            {% for week in calendar_weeks %}
+                {% for day in week %}
+                    <div class="col-md-1 calendar-day border-end border-bottom p-1" style="min-height: 120px;">
+                        {% if day.date %}
+                            <div class="calendar-day-header {% if day.date == today %}bg-primary text-white{% endif %}">
+                                {{ day.date|date:"d" }}
+                            </div>
+                            
+                            <!-- Tasks for this day -->
+                            {% for item in day.items %}
+                                <div class="calendar-item" style="background-color: 
+                                    {% if item.priority == 'high' %}#ffc107
+                                    {% elif item.priority == 'urgent' %}#dc3545
+                                    {% elif item.priority == 'medium' %}#0dcaf0
+                                    {% else %}#198754{% endif %};">
+                                    <a href="{% url 'todo_item_detail' item_id=item.id %}" class="text-white text-decoration-none">
+                                        {{ item.title|truncatechars:15 }}
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Upcoming Tasks</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Due Date</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>List</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'todo_item_detail' item_id=item.id %}" class="text-decoration-none">
+                                {{ item.title }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if item.due_date %}
+                                <span class="{% if item.due_date < now and item.status != 'completed' %}text-danger fw-bold{% endif %}">
+                                    {{ item.due_date|date:"M d, Y H:i" }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">No due date</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill 
+                                {% if item.priority == 'low' %}bg-success
+                                {% elif item.priority == 'medium' %}bg-info
+                                {% elif item.priority == 'high' %}bg-warning text-dark
+                                {% else %}bg-danger{% endif %}">
+                                {{ item.get_priority_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if item.status == 'not_started' %}bg-secondary
+                                {% elif item.status == 'in_progress' %}bg-primary
+                                {% elif item.status == 'completed' %}bg-success
+                                {% elif item.status == 'deferred' %}bg-warning
+                                {% else %}bg-danger{% endif %}">
+                                {{ item.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'todo_list_detail' list_id=item.todo_list.id %}" class="text-decoration-none">
+                                <span class="list-color-indicator" style="background-color: {{ item.todo_list.color }};"></span>
+                                {{ item.todo_list.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'todo_item_detail' item_id=item.id %}" class="btn btn-outline-secondary">View</a>
+                                <a href="{% url 'todo_item_update' item_id=item.id %}" class="btn btn-outline-primary">Edit</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-3">
+                            <p class="mb-0">No tasks with due dates found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

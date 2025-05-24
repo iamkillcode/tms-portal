@@ -52,14 +52,23 @@
                                 </span>
                             </td>
                             <td>{{ tender.user.profile.full_name }}</td>
-                            <td>{{ tender.created_at|date:"Y-m-d H:i" }}</td>
-                            <td>
-                                <button type="button" 
-                                        class="btn btn-primary btn-sm" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#updateModal{{ tender.id }}">
-                                    <i class="bi bi-pencil-square"></i> Update
-                                </button>
+                            <td>{{ tender.created_at|date:"Y-m-d H:i" }}</td>                            <td>
+                                <div class="btn-group">
+                                    <button type="button" 
+                                            class="btn btn-primary btn-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#updateModal{{ tender.id }}">
+                                        <i class="bi bi-pencil-square"></i> Update
+                                    </button>
+                                    <a href="{% url 'tender-items' tender.id %}" 
+                                       class="btn btn-info btn-sm">
+                                        <i class="bi bi-list-check"></i> Items
+                                    </a>
+                                    <a href="{% url 'framework-agreements' tender.id %}" 
+                                       class="btn btn-success btn-sm">
+                                        <i class="bi bi-file-earmark-text"></i> Agreements
+                                    </a>
+                                </div>
                             </td>
                         </tr>
 

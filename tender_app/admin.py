@@ -1,17 +1,22 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from django.urls import reverse
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.urls import reverse
+from django.utils.html import format_html
+from django.http import HttpResponse
+from datetime import datetime, timedelta
+import csv
 from .models import (
     TenderTracker, Department, Tender, Category, UserProfile, 
-    BreakfastItem, Order, OrderItem, Division, ISOTracker, ISONumber
+    BreakfastItem, Order, OrderItem, Division, ISOTracker, ISONumber,
+    TenderItem, VendorBid, FrameworkAgreement, Vendor, Chemical, ChemicalSpecification,
+    Task, TaskCategory, TaskComment
 )
 
-# Customize admin site
+# Customize admin site header and title
 admin.site.site_header = "Tender Management System"
-admin.site.site_title = "Tender Management Admin"
-admin.site.index_title = "Dashboard"
+admin.site.site_title = "TMS Admin"
+admin.site.index_title = "Welcome to TMS Admin"
 
 class CustomUserAdmin(UserAdmin):
     actions = ['delete_selected']
@@ -305,3 +310,177 @@ class ISONumberAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'officer__profile', 'division', 'department'
         )
+
+# Register TenderItem model
+@admin.register(TenderItem)
+class TenderItemAdmin(admin.ModelAdmin):
+    list_display = ('item_name', 'tender', 'quantity', 'unit_of_measure', 'chemical_grade')
+    search_fields = ('item_name', 'description', 'chemical_formula', 'chemical_grade')
+    list_filter = ('chemical_grade', 'physical_form')
+    fieldsets = (
+        (None, {
+            'fields': ('tender', 'item_name', 'description', 'quantity', 'unit_of_measure')
+        }),
+        ('Chemical Properties', {
+            'fields': ('chemical_grade', 'molar_mass', 'chemical_formula', 'density', 
+                      'vapor_density', 'assay_percentage', 'physical_form', 'package_size',
+                      'appearance', 'impurities', 'specifications')
+        }),
+        ('Manufacturer Information', {
+            'fields': ('brand', 'manufacturer')
+        }),
+    )
+
+@admin.register(Vendor)
+class VendorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'contact_person', 'email', 'phone', 'active_agreements_count', 'total_bids')
+    list_filter = ('created_at',)
+    search_fields = ('name', 'contact_person', 'email')
+    actions = ['export_vendor_data']
+    
+    def export_vendor_data(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename=vendors-{datetime.now().strftime("%Y-%m-%d")}.csv'
+        writer = csv.writer(response)
+        
+        writer.writerow(field_names)
+        for obj in queryset:
+            writer.writerow([getattr(obj, field) for field in field_names])
+        
+        return response
+    export_vendor_data.short_description = "Export Selected Vendors to CSV"
+    
+    def active_agreements_count(self, obj):
+        # Use direct foreign key filter instead of accessing a non-existent attribute
+        return FrameworkAgreement.objects.filter(vendor=obj, status='active').count()
+    active_agreements_count.short_description = 'Active Agreements'
+
+    def total_bids(self, obj):
+        return obj.vendorbid_set.count()
+    total_bids.short_description = 'Total Bids'
+
+@admin.register(VendorBid)
+class VendorBidAdmin(admin.ModelAdmin):
+    list_display = ('vendor', 'tender_item', 'unit_price', 'total_price', 'total_score', 'is_winner')
+    list_filter = ('is_winner', 'created_at')
+    search_fields = ('vendor__name', 'tender_item__item_name')
+    date_hierarchy = 'created_at'
+    actions = ['mark_as_winning_bid']
+
+    def mark_as_winning_bid(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(request, "Please select exactly one bid to mark as winner")
+            return
+        
+        bid = queryset.first()
+        VendorBid.objects.filter(tender_item=bid.tender_item).update(is_winner=False)
+        bid.is_winner = True
+        bid.save()
+    mark_as_winning_bid.short_description = "Mark as winning bid"
+
+@admin.register(FrameworkAgreement)
+class FrameworkAgreementAdmin(admin.ModelAdmin):
+    list_display = ('vendor', 'agreement_number', 'start_date', 'end_date', 'status', 'days_until_expiry')
+    list_filter = ('status', 'start_date', 'end_date')
+    search_fields = ('vendor__name', 'agreement_number', 'terms_conditions')
+    readonly_fields = ('days_until_expiry',)
+    actions = ['extend_agreement']
+
+    def days_until_expiry(self, obj):
+        if obj.end_date:
+            today = datetime.now().date()
+            days = (obj.end_date - today).days
+            if days < 0:
+                return format_html('<span style="color: red;">Expired</span>')
+            elif days < 30:
+                return format_html('<span style="color: orange;">{} days</span>', days)
+            return f'{days} days'
+        return '-'
+    days_until_expiry.short_description = 'Days Until Expiry'
+
+    def extend_agreement(self, request, queryset):
+        for agreement in queryset:
+            if agreement.end_date:
+                agreement.end_date = agreement.end_date + timedelta(days=365)
+                agreement.save()
+    extend_agreement.short_description = "Extend agreements by 1 year"
+
+class ChemicalSpecificationInline(admin.TabularInline):
+    model = ChemicalSpecification
+    extra = 1
+
+@admin.register(Chemical)
+class ChemicalAdmin(admin.ModelAdmin):
+    list_display = ('chemical_name', 'lot_number', 'formula', 'grade', 'package_size', 'quantity')
+    list_filter = ('grade', 'tender_item__tender')
+    search_fields = ('chemical_name', 'lot_number', 'formula')
+    inlines = [ChemicalSpecificationInline]
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('chemical_name', 'lot_number', 'formula')
+        }),
+        ('Specifications', {
+            'fields': ('grade', 'package_size', 'quantity')
+        }),
+        ('Relationships', {
+            'fields': ('tender_item',)
+        }),
+        ('System Information', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+@admin.register(ChemicalSpecification)
+class ChemicalSpecificationAdmin(admin.ModelAdmin):
+    list_display = ('chemical', 'spec_type', 'value', 'unit')
+    list_filter = ('spec_type', 'chemical__grade')
+    search_fields = ('chemical__chemical_name', 'value')
+
+
+class TaskCommentInline(admin.TabularInline):
+    model = TaskComment
+    extra = 0
+
+
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ('title', 'user', 'status', 'priority', 'due_date', 'created_at')
+    list_filter = ('status', 'priority', 'user')
+    search_fields = ('title', 'description', 'user__username', 'user__first_name', 'user__last_name')
+    date_hierarchy = 'created_at'
+    inlines = [TaskCommentInline]
+    
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'description', 'user', 'status', 'priority')
+        }),
+        ('Related Items', {
+            'fields': ('tender', 'vendor'),
+            'classes': ('collapse',)
+        }),
+        ('Dates', {
+            'fields': ('due_date',)
+        }),
+    )
+
+
+class TaskCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'color', 'user')
+    list_filter = ('user',)
+    search_fields = ('name', 'user__username')
+
+
+class TaskCommentAdmin(admin.ModelAdmin):
+    list_display = ('task', 'user', 'created_at')
+    list_filter = ('task__status', 'user')
+    search_fields = ('content', 'task__title', 'user__username')
+    date_hierarchy = 'created_at'
+
+
+admin.site.register(Task, TaskAdmin)
+admin.site.register(TaskCategory, TaskCategoryAdmin)
+admin.site.register(TaskComment, TaskCommentAdmin)

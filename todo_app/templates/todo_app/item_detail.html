@@ -1,0 +1,289 @@
+{% extends 'todo_app/base_todo.html' %}
+{% load static %}
+
+{% block title %}{{ item.title }} | ToDo | {{ block.super }}{% endblock %}
+
+{% block todo_title %}Task Details{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'todo_list_view' %}">Lists</a></li>
+<li class="breadcrumb-item"><a href="{% url 'todo_list_detail' list_id=item.todo_list.id %}">{{ item.todo_list.name }}</a></li>
+<li class="breadcrumb-item active">{{ item.title }}</li>
+{% endblock %}
+
+{% block todo_content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Task Details Card -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Task Details</h5>
+                <div>
+                    <a href="{% url 'todo_item_update' item_id=item.id %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a href="{% url 'todo_item_delete' item_id=item.id %}" class="btn btn-sm btn-danger">
+                        <i class="bi bi-trash"></i> Delete
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <h4 class="mb-3">
+                    {{ item.title }}
+                    {% if item.is_pinned %}<span class="badge bg-secondary">Pinned</span>{% endif %}
+                    {% if item.is_flagged %}<span class="badge bg-warning text-dark">Flagged</span>{% endif %}
+                </h4>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <span class="text-muted">Status:</span>
+                            <span class="badge 
+                                {% if item.status == 'not_started' %}bg-secondary
+                                {% elif item.status == 'in_progress' %}bg-primary
+                                {% elif item.status == 'completed' %}bg-success
+                                {% elif item.status == 'deferred' %}bg-warning
+                                {% else %}bg-danger{% endif %}">
+                                {{ item.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="text-muted">Priority:</span>
+                            <span class="badge 
+                                {% if item.priority == 'low' %}bg-success
+                                {% elif item.priority == 'medium' %}bg-info
+                                {% elif item.priority == 'high' %}bg-warning text-dark
+                                {% else %}bg-danger{% endif %}">
+                                {{ item.get_priority_display }}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="text-muted">List:</span>
+                            <a href="{% url 'todo_list_detail' list_id=item.todo_list.id %}" class="text-decoration-none">
+                                <span class="list-color-indicator" style="background-color: {{ item.todo_list.color }};"></span>
+                                {{ item.todo_list.name }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <span class="text-muted">Created:</span>
+                            <span>{{ item.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        {% if item.due_date %}
+                        <div class="mb-3">
+                            <span class="text-muted">Due:</span>
+                            <span class="{% if item.due_date < now and item.status != 'completed' %}text-danger fw-bold{% endif %}">
+                                {{ item.due_date|date:"M d, Y H:i" }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% if item.completed_at %}
+                        <div class="mb-3">
+                            <span class="text-muted">Completed:</span>
+                            <span>{{ item.completed_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>Progress</span>
+                        <span>{{ item.progress }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped 
+                            {% if item.priority == 'high' %}bg-warning
+                            {% elif item.priority == 'urgent' %}bg-danger
+                            {% elif item.priority == 'medium' %}bg-info
+                            {% else %}bg-success{% endif %}" 
+                            role="progressbar" style="width: {{ item.progress }}%" 
+                            aria-valuenow="{{ item.progress }}" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div class="mb-3">
+                    <h6>Description</h6>
+                    <div class="bg-light p-3 rounded">
+                        {% if item.description %}
+                            {{ item.description|linebreaks }}
+                        {% else %}
+                            <em class="text-muted">No description provided.</em>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Recurrence Info -->
+                {% if item.recurrence != 'none' %}
+                <div class="mb-3">
+                    <h6>Recurrence</h6>
+                    <div class="bg-light p-3 rounded">
+                        <p class="mb-0">
+                            This task repeats <strong>{{ item.get_recurrence_display }}</strong>
+                            {% if item.recurrence_end_date %}
+                                until {{ item.recurrence_end_date|date:"M d, Y" }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Comments Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Comments ({{ comments.count }})</h5>
+            </div>
+            <div class="card-body">
+                {% for comment in comments %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>{{ comment.user.get_full_name|default:comment.user.username }}</strong>
+                        <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                    <p class="mb-0">{{ comment.content|linebreaks }}</p>
+                </div>
+                {% empty %}
+                <p class="text-muted">No comments yet.</p>
+                {% endfor %}
+                
+                <!-- Add Comment Form -->
+                <div class="mt-4">
+                    <h6>Add Comment</h6>
+                    <form method="post" action="#">
+                        {% csrf_token %}
+                        <input type="hidden" name="comment_submit" value="1">
+                        <div class="mb-3">
+                            {{ comment_form.content }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Comment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Status Actions Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <form method="post" action="{% url 'todo_item_status_update' item_id=item.id %}" class="list-group-item p-3">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Update Status</label>
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            {% for status_value, status_label in item.STATUS_CHOICES %}
+                            <option value="{{ status_value }}" {% if item.status == status_value %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+                
+                <div class="list-group-item p-3">
+                    <label class="form-label">Quick Actions</label>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'todo_item_create' %}?list={{ item.todo_list.id }}" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-circle"></i> New Task in This List
+                        </a>
+                        {% if not item.is_pinned %}
+                        <form method="post" action="{% url 'todo_item_update' item_id=item.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="is_pinned" value="True">
+                            <button type="submit" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-pin-angle"></i> Pin Task
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'todo_item_update' item_id=item.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="is_pinned" value="False">
+                            <button type="submit" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-pin-angle-fill"></i> Unpin Task
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        {% if not item.is_flagged %}
+                        <form method="post" action="{% url 'todo_item_update' item_id=item.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="is_flagged" value="True">
+                            <button type="submit" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-flag"></i> Flag Task
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'todo_item_update' item_id=item.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="is_flagged" value="False">
+                            <button type="submit" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-flag-fill"></i> Unflag Task
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attachments Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Attachments ({{ attachments.count }})</h5>
+            </div>
+            <div class="card-body">
+                {% for attachment in attachments %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <a href="{{ attachment.file.url }}" target="_blank">
+                            <i class="bi bi-file-earmark"></i> {{ attachment.name }}
+                        </a>
+                        <div class="text-muted small">
+                            Uploaded by {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
+                        </div>
+                    </div>
+                    <div>
+                        <form method="post" action="#">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_attachment" value="{{ attachment.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No attachments yet.</p>
+                {% endfor %}
+                
+                <!-- Upload Form -->
+                <hr>
+                <form method="post" action="#" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="attachment_submit" value="1">
+                    <div class="mb-3">
+                        <label for="id_file" class="form-label">Upload File</label>
+                        {{ attachment_form.file }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_name" class="form-label">File Name</label>
+                        {{ attachment_form.name }}
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
