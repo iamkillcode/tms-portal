@@ -1,0 +1,1 @@
+let's add the ability for users to add avatars from file uploads and change certain profile details like their First name and last names.
