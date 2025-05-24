@@ -3,17 +3,80 @@
 
 {% block title %}Login - FDA Ghana Tender Management System{% endblock %}
 
+{% block extra_css %}
+<style>
+    .auth-wrapper {
+        background: linear-gradient(rgba(47, 49, 146, 0.9), rgba(47, 49, 146, 0.7)), 
+                    url("{% static 'images/fda-ghana.webp' %}") no-repeat center center;
+        background-size: cover;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+    
+    .login-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .login-header {
+        background: linear-gradient(135deg, #2f3192 0%, #1a1c6b 100%);
+        color: white;
+        padding: 25px 20px;
+        text-align: center;
+    }
+    
+    .login-logo {
+        width: 120px;
+        height: auto;
+        margin-bottom: 15px;
+    }
+    
+    .form-control, .input-group-text {
+        border: none;
+        height: 50px;
+    }
+    
+    .form-control:focus {
+        box-shadow: 0 0 0 3px rgba(47, 49, 146, 0.25);
+        border-color: #2f3192;
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+        color: #2f3192;
+        font-size: 1.2rem;
+    }
+    
+    .btn-fda-blue {
+        background: linear-gradient(135deg, #2f3192 0%, #1a1c6b 100%);
+        border: none;
+        height: 50px;
+        font-size: 1.1rem;
+        color: white; 
+    }
+    
+    .btn-fda-blue:hover {
+        background: linear-gradient(135deg,rgb(218, 197, 79) 0%, #2f3192 100%);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="auth-wrapper bg-fda-white" style="min-height: 100vh;">
+<div class="auth-wrapper">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-4">
-                <div class="card login-card shadow my-4">
+                <div class="login-card shadow">
                     <div class="login-header">
-                        <img src="{% static 'images/FDA_dark_logo.png' %}" alt="FDA Ghana" class="login-logo mb-2">
-                        <h3 class="mb-0">FDA Ghana TMS Login</h3>
+                        <img src="{% static 'images/FDA_dark_logo.png' %}" alt="FDA Ghana" class="login-logo">
+                        <h3 class="mb-0">FDA Ghana</h3>
+                        <p class="mb-0 text-fda-yellow">Tender Management System</p>
                     </div>
-                    <div class="card-body p-4 bg-fda-white">
+                    
+                    <div class="card-body p-4 bg-white">
                         {% if messages %}
                         {% for message in messages %} 
                         <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
@@ -22,30 +85,37 @@
                         </div>
                         {% endfor %}
                         {% endif %}
+                        
+                        <h4 class="text-center mb-4 text-fda-blue">Welcome Back</h4>
+                        
                         <form method="post" class="needs-validation" novalidate>
                             {% csrf_token %}
                             <div class="mb-4">
-                                <label for="username" class="form-label text-fda-blue">Username</label>
+                                <label for="username" class="form-label text-fda-blue fw-bold">Username</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
-                                    <input type="text" name="username" class="form-control" required 
-                                           placeholder="Enter your username">
+                                    <input type="text" name="username" class="form-control shadow-sm" required 
+                                           placeholder="Enter your username" autofocus>
                                 </div>
                             </div>
                             <div class="mb-4">
-                                <label for="password" class="form-label text-fda-blue">Password</label>
+                                <label for="password" class="form-label text-fda-blue fw-bold">Password</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
-                                    <input type="password" name="password" class="form-control" required 
+                                    <input type="password" name="password" class="form-control shadow-sm" required 
                                            placeholder="Enter your password">
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-fda-blue w-100 py-2 mb-4">Sign In</button>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-fda-blue py-2 mb-4">Sign In</button>
+                            </div>
                         </form>
-                        <div class="text-center">
-                            <p class="mb-0">Don't have an account? <a href="{% url 'register' %}" class="text-fda-blue fw-bold">Register here</a></p>
-                        </div>
-                    </div>
+                      </div>
+                </div>
+                
+                <div class="text-center mt-3 text-white">
+                    <small>&copy; {% now "Y" %} Food and Drugs Authority Ghana</small>
                 </div>
             </div>
         </div>
