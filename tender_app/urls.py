@@ -1,13 +1,17 @@
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.shortcuts import render
 from . import views
+
+def registration_disabled(request):
+    return render(request, 'registration_disabled.html')
 
 urlpatterns = [
     # Authentication URLs
     path('', views.dashboard_view, name='dashboard'),  # Make dashboard the root URL
     path('login/', views.login_view, name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
-    path('register/', views.register_view, name='register'),
+    path('register/', registration_disabled, name='register'),  # Disabled registration
       # Tender URLs
     path('tender-generator/', views.tender_generator_view, name='tender-generator'),
     path('tender/create/', views.tender_generator_view, name='tender-create'),  # Alias for tender-generator

@@ -47,9 +47,9 @@ class AuditTrailMiddleware(MiddlewareMixin):
                 return response
 
         # Special handling for logout path - log even with 405 status
-        if path.endswith('/logout/'):
-            user = request.user if request.user.is_authenticated else None
-            if user and not hasattr(request, '_audit_trail_logout_logged'):
+        if path == '/logout/' or path.endswith('/logout/'):
+            user = request.user if hasattr(request, 'user') and request.user.is_authenticated else None
+            if user:
                 try:
                     AuditLog.objects.create(
                         user=user,
@@ -61,10 +61,11 @@ class AuditTrailMiddleware(MiddlewareMixin):
                         model_name='user',
                         object_repr=f"User #{user.id}"
                     )
-                    request._audit_trail_logout_logged = True
-                except Exception:
-                    pass
-            # Don't log a second time for this request
+                except Exception as e:
+                    # Log the error but don't break the application
+                    print(f"Error logging logout: {e}")
+            
+            # Always return the response for logout requests
             return response
 
         # Skip if status code is not successful (except for the special case above)
