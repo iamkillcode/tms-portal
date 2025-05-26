@@ -6,6 +6,7 @@ from django.contrib.auth.views import LogoutView
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 
 @require_http_methods(["GET", "POST"])
 def logout_view(request):
@@ -15,12 +16,16 @@ def logout_view(request):
     # Redirect to login page
     return redirect('login')
 
+def health_check(request):
+    return JsonResponse({"status": "ok"})
+
 urlpatterns = [
     path('admin/', admin.site.urls),  # Default Django admin
     path('', include('tender_app.urls')),  # Frontend URLs
     path('todo/', include('todo_app.urls')),  # ToDo system URLs
     path('audit-trail/', include('audit_trail.urls')),  # Audit Trail URLs
     path('logout/', logout_view, name='logout'),  # Custom logout view
+    path('health/', health_check, name='health_check'),
 ]
 
 # Serve media and static files in development
