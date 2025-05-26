@@ -28,6 +28,13 @@ DEBUG = True  # Temporarily set to True for development
 
 ALLOWED_HOSTS = ['*']
 
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = [
+    'https://tms-portal.fly.dev',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
 
 # Application definition
 
@@ -177,10 +184,16 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
-# For development (HTTP), set to False; for production (HTTPS), set to True
-CSRF_COOKIE_SECURE = False  # Set to False for development with HTTP
-SESSION_COOKIE_SECURE = False  # Set to False for development with HTTP
-# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Uncomment in production
+
+# For production on Fly.io with HTTPS
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # Email settings (update these with your email configuration)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # for development
