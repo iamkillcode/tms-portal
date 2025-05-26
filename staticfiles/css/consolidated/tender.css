@@ -1,0 +1,30 @@
+/* TENDER MODULE SPECIFIC CSS */
+
+.tender-form-container {
+    max-width: 700px;
+    margin: 2rem auto;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.generated-number {
+    background: #e8f5e9;
+    border-left: 4px solid #2e7d32;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 4px;
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Select2 styling */
+.select2-container--default .select2-selection--single {
+    height: 38px;
+    border: 1px solid #ced4da;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 38px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+}

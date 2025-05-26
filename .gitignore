@@ -1,9 +1,9 @@
-
-# Python
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+
+# Python
 .Python
 env/
 build/
@@ -43,4 +43,4 @@ env/
 
 # OS
 .DS_Store
-Thumbs.db
+Thumbs.db#
