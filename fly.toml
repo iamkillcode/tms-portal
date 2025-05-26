@@ -1,0 +1,16 @@
+app = "fda-ghana-tms"
+primary_region = "ams" # Or use 'lhr', 'sjc', etc.
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  DJANGO_SETTINGS_MODULE = "tender.settings"
+  PYTHONUNBUFFERED = "1"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
