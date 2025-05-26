@@ -25,13 +25,13 @@ RUN addgroup --system appgroup && adduser --system --group appuser
 # Change ownership of the workdir
 RUN chown -R appuser:appgroup /app
 
-# Switch to the non-root user
-USER appuser
-
-# Install Python dependencies
+# Install Python dependencies before switching to non-root user
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+
+# Switch to the non-root user
+USER appuser
 
 # Copy project files
 COPY . .
