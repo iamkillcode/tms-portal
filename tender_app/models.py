@@ -91,10 +91,26 @@ class Tender(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     full_name = models.CharField(max_length=255)
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp']),
+        ],
+        help_text="Upload a profile picture (JPG, PNG or WebP, max 2MB)"
+    )
+    bio = models.TextField(blank=True, help_text="Brief description about yourself")
+    phone = models.CharField(max_length=20, blank=True)
+    department = models.ForeignKey('Department', on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.full_name
+        
+    def clean(self):
+        if self.avatar and self.avatar.size > 2 * 1024 * 1024:  # 2MB
+            raise ValidationError('Image file too large ( > 2MB )')
 
 
 class Category(models.Model):

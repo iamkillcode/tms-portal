@@ -62,9 +62,7 @@ urlpatterns = [
         path('<int:pk>/', views.chemical_detail, name='chemical_detail'),
         path('<int:pk>/update/', views.chemical_update, name='chemical_update'),
         path('spec/<int:pk>/delete/', views.chemical_spec_delete, name='chemical_spec_delete'),
-    ])),
-
-    # Task Management URLs
+    ])),    # Task Management URLs
     path('tasks/', include([
         path('', views.task_list, name='task_list'),
         path('dashboard/', views.task_dashboard, name='task_dashboard'),
@@ -75,4 +73,8 @@ urlpatterns = [
         path('<int:pk>/status/', views.task_status_update, name='task_status_update'),
         path('categories/create/', views.task_category_create, name='task_category_create'),
     ])),
+    
+    # User Profile URLs
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/update/', views.profile_update_view, name='profile-update'),
 ]

@@ -1,8 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (UserProfile, TenderItem, VendorBid, FrameworkAgreement, 
-                    Vendor, Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment)
+                    Vendor, Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment, Department)
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -123,3 +123,38 @@ class TaskCommentForm(forms.ModelForm):
         widgets = {
             'content': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Add a comment...'}),
         }
+
+class UserProfileForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
+    email = forms.EmailField(required=True)
+    
+    class Meta:
+        model = UserProfile
+        fields = ['full_name', 'avatar', 'bio', 'phone', 'department']
+        widgets = {
+            'bio': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Tell us about yourself...'}),
+            'full_name': forms.TextInput(attrs={'placeholder': 'Your full name'}),
+            'phone': forms.TextInput(attrs={'placeholder': 'Phone number'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super(UserProfileForm, self).__init__(*args, **kwargs)
+        if self.instance and self.instance.user:
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
+            self.fields['email'].initial = self.instance.user.email
+    
+    def save(self, commit=True):
+        profile = super(UserProfileForm, self).save(commit=False)
+        # Update the associated User model
+        if profile.user:
+            user = profile.user
+            user.first_name = self.cleaned_data['first_name']
+            user.last_name = self.cleaned_data['last_name']
+            user.email = self.cleaned_data['email']
+            if commit:
+                user.save()
+        if commit:
+            profile.save()
+        return profile

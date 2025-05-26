@@ -13,7 +13,8 @@ from .models import (
 from .forms import (
     CustomUserCreationForm, TenderItemForm, VendorBidForm,
     FrameworkAgreementForm, ChemicalForm, ChemicalSpecificationForm,
-    ChemicalImportForm, TaskForm, TaskCategoryForm, TaskCommentForm
+    ChemicalImportForm, TaskForm, TaskCategoryForm, TaskCommentForm,
+    UserProfileForm
 )
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -126,7 +127,7 @@ def tender_generator_view(request):
 
             # Save Tender into the database
             department = Department.objects.get(code=department_code)
-            category = Category.objects.get(code=category_code)
+            category = Category.objects.get(code=categoryCode)
 
             tender = Tender.objects.create(
                 tender_number=tender_number,
@@ -1103,3 +1104,27 @@ def task_dashboard(request):
     }
     
     return render(request, 'tender_app/task_dashboard.html', context)
+
+@login_required
+def profile_view(request):
+    """View the current user's profile."""
+    user_profile = request.user.profile
+    return render(request, 'profile.html', {
+        'user_profile': user_profile
+    })
+
+@login_required
+def profile_update_view(request):
+    """Update the current user's profile."""
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('profile')
+    else:
+        form = UserProfileForm(instance=request.user.profile)
+    
+    return render(request, 'profile_update.html', {
+        'form': form
+    })
