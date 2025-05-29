@@ -339,11 +339,11 @@ def create_divisions(apps, schema_editor):
     Division = apps.get_model('tender_app', 'Division')
     divisions = [
         ('HR', 'HR Division'),
-        ('ITMS', 'ITMS Division'),
+        ('IT', 'IMTS Division'),
         ('FIN', 'Finance Division'),
         ('CLSR', 'Centre for Laboratory Services and Research'),
-        ('HPTD', 'Health Products and Technologies Division'),
-        ('QMSD', 'Quality Assurance Division'),
+        ('HPT', 'Health Products and Technologies Division'),
+        ('QMS', 'Quality Assurance Division'),
         ('CSD', 'Corporate Services Division'),
         ('FD', 'Food Division'),
     ]
