@@ -339,11 +339,11 @@ def create_divisions(apps, schema_editor):
     Division = apps.get_model('tender_app', 'Division')
     divisions = [
         ('HR', 'HR Division'),
-        ('IT', 'IMTS Division'),
+        ('ITMS', 'ITMS Division'),
         ('FIN', 'Finance Division'),
         ('CLSR', 'Centre for Laboratory Services and Research'),
-        ('HPT', 'Health Products and Technologies Division'),
-        ('QMS', 'Quality Assurance Division'),
+        ('HPTD', 'Health Products and Technologies Division'),
+        ('QMSD', 'Quality Assurance Division'),
         ('CSD', 'Corporate Services Division'),
         ('FD', 'Food Division'),
     ]
@@ -476,4 +476,3 @@ class TaskComment(models.Model):
     
     class Meta:
         ordering = ['created_at']
-

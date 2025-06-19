@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (UserProfile, TenderItem, VendorBid, FrameworkAgreement, 
-                    Vendor, Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment, Department)
+                    Vendor, Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment, Department, Tender)
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -124,6 +124,18 @@ class TaskCommentForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Add a comment...'}),
         }
 
+class VendorForm(forms.ModelForm):
+    class Meta:
+        model = Vendor
+        fields = ['name', 'address', 'contact_person', 'phone', 'email']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company/Vendor Name'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Full Address'}),
+            'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Primary Contact Person'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Phone Number'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Contact Email Address'}),
+        }
+
 class UserProfileForm(forms.ModelForm):
     first_name = forms.CharField(max_length=30, required=False)
     last_name = forms.CharField(max_length=30, required=False)
@@ -137,24 +149,36 @@ class UserProfileForm(forms.ModelForm):
             'full_name': forms.TextInput(attrs={'placeholder': 'Your full name'}),
             'phone': forms.TextInput(attrs={'placeholder': 'Phone number'}),
         }
-    
     def __init__(self, *args, **kwargs):
         super(UserProfileForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.user:
             self.fields['first_name'].initial = self.instance.user.first_name
             self.fields['last_name'].initial = self.instance.user.last_name
             self.fields['email'].initial = self.instance.user.email
-    
+            
     def save(self, commit=True):
         profile = super(UserProfileForm, self).save(commit=False)
         # Update the associated User model
         if profile.user:
-            user = profile.user
-            user.first_name = self.cleaned_data['first_name']
-            user.last_name = self.cleaned_data['last_name']
-            user.email = self.cleaned_data['email']
+            profile.user.first_name = self.cleaned_data['first_name']
+            profile.user.last_name = self.cleaned_data['last_name']
+            profile.user.email = self.cleaned_data['email']
             if commit:
-                user.save()
-        if commit:
-            profile.save()
+                profile.user.save()
+                profile.save()
         return profile
+
+class TenderUpdateForm(forms.ModelForm):
+    vendor = forms.ModelChoiceField(
+        queryset=Vendor.objects.all(),
+        label="Vendor/Consultant Name:",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = Tender
+        fields = [
+            # ...existing fields...
+            'vendor',
+            # ...existing fields...
+        ]

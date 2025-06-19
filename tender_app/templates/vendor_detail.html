@@ -1,0 +1,409 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="border-bottom pb-2">
+                <i class="bi bi-person-badge me-2"></i> Vendor Details
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-fda-blue text-white">
+                    <h5 class="card-title mb-0 text-white">{{ vendor.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="vendor-details">
+                        <p class="mb-1"><strong><i class="bi bi-person"></i> Contact Person:</strong></p>
+                        <p class="text-muted mb-3">{{ vendor.contact_person }}</p>
+                        
+                        <p class="mb-1"><strong><i class="bi bi-geo-alt"></i> Address:</strong></p>
+                        <p class="text-muted mb-3">{{ vendor.address|linebreaks }}</p>
+                        
+                        <p class="mb-1"><strong><i class="bi bi-telephone"></i> Phone:</strong></p>
+                        <p class="text-muted mb-3">{{ vendor.phone }}</p>
+                        
+                        <p class="mb-1"><strong><i class="bi bi-envelope"></i> Email:</strong></p>
+                        <p class="text-muted mb-3">{{ vendor.email }}</p>
+                        
+                        <p class="mb-1"><strong><i class="bi bi-calendar"></i> Registered:</strong></p>
+                        <p class="text-muted">{{ vendor.created_at|date:"F d, Y" }}</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'vendor-list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                        <div>
+                            <a href="{% url 'vendor-update' vendor.id %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <a href="{% url 'vendor-delete' vendor.id %}" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <ul class="nav nav-tabs mb-3" id="vendorTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tenders-tab" data-bs-toggle="tab" data-bs-target="#tenders" 
+                            type="button" role="tab" aria-controls="tenders" aria-selected="true">
+                        <i class="bi bi-files"></i> Tenders
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="agreements-tab" data-bs-toggle="tab" data-bs-target="#agreements" 
+                            type="button" role="tab" aria-controls="agreements" aria-selected="false">
+                        <i class="bi bi-file-earmark-text"></i> Framework Agreements
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="iso-tab" data-bs-toggle="tab" data-bs-target="#iso" 
+                            type="button" role="tab" aria-controls="iso" aria-selected="false">
+                        <i class="bi bi-file-earmark-code"></i> ISO Numbers
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="vendorTabsContent">
+                <!-- Tenders Tab -->
+                <div class="tab-pane fade show active" id="tenders" role="tabpanel" aria-labelledby="tenders-tab">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">Associated Tenders</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if winning_bids %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Tender Number</th>
+                                                <th>Item</th>
+                                                <th>Unit Price</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for bid in winning_bids %}
+                                                <tr>
+                                                    <td>{{ bid.tender.tender_number }}</td>
+                                                    <td>{{ bid.tender_item.item_name }}</td>
+                                                    <td>{{ bid.currency }} {{ bid.unit_price|floatformat:2 }}</td>
+                                                    <td>
+                                                        {% if bid.is_winner %}
+                                                            <span class="badge bg-success">Winner</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <a href="{% url 'tender-detail' bid.tender.id %}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye"></i> View Tender
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> No tender bids found for this vendor.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Framework Agreements Tab -->
+                <div class="tab-pane fade" id="agreements" role="tabpanel" aria-labelledby="agreements-tab">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">Framework Agreements</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if framework_agreements %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Agreement Number</th>
+                                                <th>Tender Number</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for agreement in framework_agreements %}
+                                                <tr>
+                                                    <td>{{ agreement.agreement_number }}</td>
+                                                    <td>{{ agreement.tender.tender_number }}</td>
+                                                    <td>{{ agreement.start_date|date:"M d, Y" }}</td>
+                                                    <td>{{ agreement.end_date|date:"M d, Y" }}</td>
+                                                    <td>
+                                                        {% if agreement.status == 'active' %}
+                                                            <span class="badge bg-success">Active</span>
+                                                        {% elif agreement.status == 'expired' %}
+                                                            <span class="badge bg-secondary">Expired</span>
+                                                        {% elif agreement.status == 'terminated' %}
+                                                            <span class="badge bg-danger">Terminated</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> No framework agreements found for this vendor.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ISO Numbers Tab -->
+                <div class="tab-pane fade" id="iso" role="tabpanel" aria-labelledby="iso-tab">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">ISO Numbers</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if iso_numbers %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>ISO Number</th>
+                                                <th>Date Created</th>
+                                                <th>Division</th>
+                                                <th>Department</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for iso in iso_numbers %}
+                                                <tr>
+                                                    <td>{{ iso.iso_number }}</td>
+                                                    <td>{{ iso.date_created|date:"M d, Y" }}</td>
+                                                    <td>{{ iso.division.name }}</td>
+                                                    <td>{{ iso.department.name }}</td>
+                                                    <td>
+                                                        <a href="{% url 'iso-detail' iso.id %}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye"></i> View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> No ISO numbers associated with this vendor.
+                                </div>
+                            {% endif %}                        </div>
+                    </div>                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+            </h2>
+        </div>
+    </div>
+
+    <!-- Vendor Info Card -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-fda-blue text-white">
+                    <h5 class="mb-0">Vendor Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Contact Person:</strong> {{ vendor.contact_person }}</p>
+                            <p><strong>Phone:</strong> {{ vendor.phone }}</p>
+                            <p><strong>Email:</strong> {{ vendor.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Address:</strong> {{ vendor.address }}</p>
+                            <p><strong>Registration Date:</strong> {{ vendor.created_at|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'vendor-update' vendor.id %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Edit Vendor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Associated Tenders Card -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-fda-blue text-white">
+                    <h5 class="mb-0">Associated Tenders</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tender Number</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if tender_bids %}
+                                    {% for bid in tender_bids %}
+                                    <tr>
+                                        <td>{{ bid.tender.tender_number }}</td>
+                                        <td>{{ bid.tender.description|truncatechars:50 }}</td>
+                                        <td>
+                                            {% if bid.is_winner %}
+                                            <span class="badge bg-success">Winner</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Participant</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ bid.created_at|date:"M d, Y" }}</td>
+                                        <td>{{ bid.currency }} {{ bid.total_price }}</td>
+                                        <td>
+                                            <a href="{% url 'tender-detail' bid.tender.id %}" class="btn btn-sm btn-info">
+                                                <i class="bi bi-eye"></i> View Tender
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">No tender bids found</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Associated ISO Numbers -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-fda-blue text-white">
+                    <h5 class="mb-0">Associated ISO Numbers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ISO Number</th>
+                                    <th>Description</th>
+                                    <th>Letter Type</th>
+                                    <th>Date Created</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if iso_numbers %}
+                                    {% for iso in iso_numbers %}
+                                    <tr>
+                                        <td>{{ iso.iso_number }}</td>
+                                        <td>{{ iso.description|truncatechars:50 }}</td>
+                                        <td>{{ iso.get_letter_type_display }}</td>
+                                        <td>{{ iso.date_created|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'iso-detail' iso.id %}" class="btn btn-sm btn-info">
+                                                <i class="bi bi-eye"></i> View ISO
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">No ISO numbers found</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Framework Agreements -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-fda-blue text-white">
+                    <h5 class="mb-0">Framework Agreements</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Agreement Number</th>
+                                    <th>Associated Tender</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if framework_agreements %}
+                                    {% for agreement in framework_agreements %}
+                                    <tr>
+                                        <td>{{ agreement.agreement_number }}</td>
+                                        <td>{{ agreement.tender.tender_number }}</td>
+                                        <td>{{ agreement.start_date|date:"M d, Y" }}</td>
+                                        <td>{{ agreement.end_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            {% if agreement.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                            {% elif agreement.status == 'expired' %}
+                                            <span class="badge bg-warning">Expired</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">Terminated</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">No framework agreements found</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

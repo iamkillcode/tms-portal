@@ -1,41 +1,61 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from datetime import datetime, timezone  # For Python's built-in timezone
-from django.http import JsonResponse, HttpResponse
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.forms import AuthenticationForm
+﻿# WARNING: This file is maintained for backward compatibility only.
+# All views have been moved to the views/ directory for better organization.
+# Please use the modular imports from the views/ directory instead.
+
+# Re-export all views from the views/ directory
+from .views import *
+
 from .models import (
     TenderTracker, Department, Category, Tender, TenderItem,
     VendorBid, FrameworkAgreement, Vendor, ISONumber, ISOTracker,
     Division, UserProfile, BreakfastItem, Order, OrderItem,
     Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment
 )
+
 from .forms import (
     CustomUserCreationForm, TenderItemForm, VendorBidForm,
     FrameworkAgreementForm, ChemicalForm, ChemicalSpecificationForm,
     ChemicalImportForm, TaskForm, TaskCategoryForm, TaskCommentForm,
-    UserProfileForm
+    UserProfileForm, VendorForm
 )
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
+import pandas as pd
+
+# For type annotations and imports needed in other files
+from django.shortcuts import render, redirect, get_object_or_404
+from datetime import datetime, timezone, timedelta
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib import messages
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django import forms
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.db.models.functions import ExtractMonth
+from django.urls import reverse
+from django.utils import timezone as django_timezone
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+
+from .models import (
+    TenderTracker, Department, Category, Tender, TenderItem,
+    VendorBid, FrameworkAgreement, Vendor, ISONumber, ISOTracker,
+    Division, UserProfile, BreakfastItem, Order, OrderItem,
+    Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment
+)
+
+from .forms import (
+    CustomUserCreationForm, TenderItemForm, VendorBidForm,
+    FrameworkAgreementForm, ChemicalForm, ChemicalSpecificationForm,
+    ChemicalImportForm, TaskForm, TaskCategoryForm, TaskCommentForm,
+    UserProfileForm, VendorForm
+)
+
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
-from django.contrib.auth.models import User
-from tender_app.models import UserProfile
-from django.utils import timezone as django_timezone  # For Django's timezone utilities
-from .models import BreakfastItem, Order, OrderItem
-from django.urls import reverse
-from .models import ISONumber, ISOTracker, Division
-from django.utils import timezone
-from datetime import timedelta
-from django.views.generic import DetailView
-from .models import Tender
 import pandas as pd
 
 def has_admin_role(user):
@@ -133,6 +153,7 @@ def tender_generator_view(request):
                 tender_number=tender_number,
                 description=tender_description,
                 department=department,
+                category=category,
                 user=request.user  # Automatically assign logged-in user
             )
             messages.success(request, f'Tender {tender_number} created successfully!')
@@ -262,12 +283,16 @@ def tender_list_view(request):
     
     tenders = tenders.order_by('-created_at')
     
+    # Get all vendors for the dropdown
+    vendors = Vendor.objects.all().order_by('name')
+    
     paginator = Paginator(tenders, 10)
     page = request.GET.get('page')
     tenders = paginator.get_page(page)
     
     return render(request, 'tender_list.html', {
         'tenders': tenders,
+        'vendors': vendors,
         'search_query': search_query
     })
 
@@ -286,8 +311,17 @@ def tender_update_view(request, tender_id):
         tender.contract_date = request.POST.get('contract_date') or None
         tender.currency = request.POST.get('currency')
         tender.contract_amount = request.POST.get('contract_amount') or None
-        tender.vendor_name = request.POST.get('vendor_name')
-        # Update other fields similarly...
+        
+        # Keep vendor_name field for backward compatibility
+        vendor_name = request.POST.get('vendor_name')
+        tender.vendor_name = vendor_name
+        
+        # Create relationship with vendor using proper ForeignKey
+        vendor_id = request.POST.get('vendor')
+        if vendor_id:
+            tender.vendor = get_object_or_404(Vendor, id=vendor_id)
+        else:
+            tender.vendor = None
         
         tender.save()
         messages.success(request, 'Tender details updated successfully.')
@@ -550,10 +584,10 @@ def iso_list_view(request):
 
 @login_required
 @user_passes_test(has_user_role)
-def dashboard_view(request):
-    # Get counts
+def dashboard_view(request):    # Get counts
     total_tenders = Tender.objects.count()
     total_isos = ISONumber.objects.count()
+    total_vendors = Vendor.objects.count()
     
     # Get recent items (last 30 days)
     thirty_days_ago = timezone.now() - timedelta(days=30)
@@ -1128,3 +1162,217 @@ def profile_update_view(request):
     return render(request, 'profile_update.html', {
         'form': form
     })
+
+@login_required
+@user_passes_test(has_user_role)
+def vendor_list_view(request):
+    """Display a list of all vendors."""
+    vendors = Vendor.objects.all().order_by('name')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        vendors = vendors.filter(
+            Q(name__icontains=search_query) |
+            Q(contact_person__icontains=search_query) |
+            Q(email__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(vendors, 10)  # Show 10 vendors per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'vendor_list.html', {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'total_vendors': vendors.count(),
+    })
+
+@login_required
+@user_passes_test(has_user_role)
+def vendor_detail_view(request, vendor_id):
+    """Display details of a specific vendor."""
+    vendor = get_object_or_404(Vendor, id=vendor_id)
+    
+    # Get related tenders through framework agreements
+    framework_agreements = vendor.framework_agreements.all().select_related('tender')
+    
+    # Get related tenders through winning bids
+    winning_bids = VendorBid.objects.filter(vendor=vendor, is_winner=True).select_related('tender', 'tender_item').distinct()
+    
+    # Get associated ISO numbers through tenders
+    iso_numbers = []
+    for agreement in framework_agreements:
+        iso_numbers.extend(list(ISONumber.objects.filter(tender=agreement.tender)))
+    
+    for bid in winning_bids:
+        if bid.tender:
+            iso_numbers.extend(list(ISONumber.objects.filter(tender=bid.tender)))
+    
+    # Remove duplicates
+    iso_numbers = list(set(iso_numbers))
+    
+    return render(request, 'vendor_detail.html', {
+        'vendor': vendor,
+        'framework_agreements': framework_agreements,
+        'winning_bids': winning_bids,
+        'iso_numbers': iso_numbers,
+    })
+
+@login_required
+@user_passes_test(has_user_role)
+def vendor_create_view(request):
+    """Create a new vendor."""
+    if request.method == 'POST':
+        form = VendorForm(request.POST)
+        if form.is_valid():
+            vendor = form.save()
+            messages.success(request, f'Vendor "{vendor.name}" created successfully!')
+            return redirect('vendor-detail', vendor_id=vendor.id)
+    else:
+        form = VendorForm()
+    
+    return render(request, 'vendor_form.html', {
+        'form': form,
+        'title': 'Add New Vendor',
+        'button_text': 'Create Vendor',
+    })
+
+@login_required
+@user_passes_test(has_user_role)
+def vendor_update_view(request, vendor_id):
+    """Update an existing vendor."""
+    vendor = get_object_or_404(Vendor, id=vendor_id)
+    
+    if request.method == 'POST':
+        form = VendorForm(request.POST, instance=vendor)
+        if form.is_valid():
+            vendor = form.save()
+            messages.success(request, f'Vendor "{vendor.name}" updated successfully!')
+            return redirect('vendor-detail', vendor_id=vendor.id)
+    else:
+        form = VendorForm(instance=vendor)
+    
+    return render(request, 'vendor_form.html', {
+        'form': form,
+        'vendor': vendor,
+        'title': f'Edit Vendor: {vendor.name}',
+        'button_text': 'Update Vendor',
+    })
+
+@login_required
+@user_passes_test(has_user_role)
+def vendor_delete_view(request, vendor_id):
+    """Delete an existing vendor."""
+    vendor = get_object_or_404(Vendor, id=vendor_id)
+    
+    if request.method == 'POST':
+        vendor_name = vendor.name
+        vendor.delete()
+        messages.success(request, f'Vendor "{vendor_name}" deleted successfully!')
+        return redirect('vendor-list')
+    
+    return render(request, 'vendor_confirm_delete.html', {
+        'vendor': vendor,
+    })
+
+def all_framework_agreements_view(request):
+    """View to list all framework agreements across all tenders."""
+    from datetime import datetime, timedelta
+    
+    # Get filter parameters first
+    today = datetime.now().date()
+    soon = today + timedelta(days=30)
+    
+    # Make efficient DB queries
+    agreements = FrameworkAgreement.objects.all().select_related('vendor', 'tender')
+    expired = agreements.filter(end_date__lt=today)
+    expiring_soon = agreements.filter(end_date__gte=today, end_date__lte=soon)
+    active_agreements = agreements.filter(end_date__gt=soon)
+    
+    grouped_agreements = {
+        'all': agreements,
+        'active': active_agreements,
+        'expiring_soon': expiring_soon,
+        'expired': expired,
+    }
+    
+    if request.method == 'POST':
+        form = FrameworkAgreementForm(request.POST)
+        if form.is_valid():
+            agreement = form.save(commit=False)
+            tender_id = request.POST.get('tender')
+            if tender_id and tender_id.strip():
+                try:
+                    tender = get_object_or_404(Tender, id=tender_id)
+                    agreement.tender = tender
+                    agreement.save()
+                    messages.success(request, 'Framework Agreement created successfully!')
+                    return redirect('all-framework-agreements')
+                except Tender.DoesNotExist:
+                    messages.error(request, 'Tender not found.')
+                except IntegrityError:
+                    messages.error(request, 'Database integrity error. This agreement may already exist.')
+                except ValidationError as e:
+                    messages.error(request, f'Validation error: {str(e)}')
+                except Exception as e:
+                    messages.error(request, f'Unexpected error: {str(e)}')
+                    # Log the unexpected exception
+                    logger.error(f"Unexpected error creating agreement: {str(e)}")
+            else:
+                messages.error(request, 'Please select a tender')
+    else:
+        form = FrameworkAgreementForm()
+    
+    return render(request, 'all_framework_agreements.html', {
+        'agreements': grouped_agreements,
+        'tenders': tenders,
+        'form': form,
+    })
+
+def generic_list_view(request, model_class, template_name, context_name, 
+                      search_fields=None, order_by='-created_at', paginate_by=10):
+    objects = model_class.objects.all()
+    
+    # Apply search if provided
+    search_query = request.GET.get('search', '')
+    if search_query and search_fields:
+        query = Q()
+        for field in search_fields:
+            query |= Q(**{f"{field}__icontains": search_query})
+        objects = objects.filter(query)
+    
+    # Apply ordering
+    objects = objects.order_by(order_by)
+    
+    # Pagination
+    paginator = Paginator(objects, paginate_by)
+    page = request.GET.get('page')
+    page_obj = paginator.get_page(page)
+    
+    context = {
+        context_name: page_obj,
+        'search_query': search_query,
+        f'total_{context_name}': objects.count(),
+    }
+    
+    return render(request, template_name, context)
+
+class VendorListView(ListView):
+    model = Vendor
+    template_name = 'vendor_list.html'
+    context_object_name = 'vendors'
+    paginate_by = 10
+    ordering = ['name']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(contact_person__icontains=search_query) |
+                Q(email__icontains=search_query)
+            )
+        return queryset

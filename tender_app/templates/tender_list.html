@@ -3,6 +3,24 @@
 
 {% block title %}Tender List - TMS{% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* Custom styling for Select2 to match Bootstrap */
+    .select2-container--default .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -153,12 +171,18 @@
                                             <div class="col-md-4">
                                                 <label class="form-label">Amount to be Paid</label>
                                                 <input type="number" name="payment_amount" class="form-control" value="{{ tender.payment_amount }}" step="0.01">
-                                            </div>
-
-                                            <!-- Vendor Details -->
+                                            </div>                                           
+                                              <!-- Vendor Details -->
                                             <div class="col-md-12">
                                                 <label class="form-label">Vendor/Consultant Name</label>
-                                                <input type="text" name="vendor_name" class="form-control" value="{{ tender.vendor_name }}">
+                                                <select name="vendor" class="form-select">
+                                                    <option value="">-- Select Vendor --</option>
+                                                    {% for vendor in vendors %}
+                                                        <option value="{{ vendor.id }}" {% if tender.vendor_id == vendor.id %}selected{% endif %}>{{ vendor.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <!-- Keep old field for backward compatibility -->
+                                                <input type="hidden" name="vendor_name" value="{{ tender.vendor.name|default:tender.vendor_name }}">
                                             </div>
 
                                             <!-- PO Details -->
@@ -261,4 +285,19 @@
     </nav>
     {% endif %}
 </div>
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Select2 on all vendor dropdowns
+        $('select[name="vendor_name"]').select2({
+            placeholder: "Select a vendor",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}

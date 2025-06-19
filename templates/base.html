@@ -80,14 +80,15 @@
                                    href="{% url 'chemical_list' %}">
                                    <i class="bi bi-flask"></i> Chemical Management
                                 </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'tender-list' %}">
-                                   <i class="bi bi-file-earmark-text"></i> Framework Agreements
+                            </li>                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'all-framework-agreements' %}active{% endif %}"
+                                    href="{% url 'all-framework-agreements' %}">
+                                    <i class="bi bi-file-earmark-text"></i> Framework Agreements
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{% url 'tender-list' %}">
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'vendor-list' or request.resolver_match.url_name == 'vendor-detail' %}active{% endif %}" 
+                                   href="{% url 'vendor-list' %}">
                                    <i class="bi bi-people"></i> Vendor Management
                                 </a>
                             </li>

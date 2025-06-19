@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}All Framework Agreements - TMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">All Framework Agreements</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">All Framework Agreements</h2>
+            <p class="text-muted mb-0">Manage all framework agreements across tenders</p>
+        </div>
+    </div>
+      <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Active Agreements</h6>
+                    <h2 class="mb-0">{{ agreements.active|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">Expiring Soon</h6>
+                    <h2 class="mb-0">{{ agreements.expiring_soon|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Expired</h6>
+                    <h2 class="mb-0">{{ agreements.expired|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agreements Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between">
+            <h5 class="mb-0">Framework Agreements</h5>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addAgreementModal">
+                <i class="bi bi-plus-circle"></i> New Agreement
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Agreement #</th>
+                            <th>Tender</th>
+                            <th>Vendor</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>                    <tbody>
+                        {% for agreement in agreements.all %}
+                        <tr>
+                            <td>{{ agreement.agreement_number }}</td>
+                            <td>
+                                {% if agreement.tender %}
+                                <a href="{% url 'tender-detail' agreement.tender.id %}">
+                                    {{ agreement.tender.tender_number }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">Not linked</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ agreement.vendor.name }}</td>
+                            <td>{{ agreement.start_date }}</td>
+                            <td>{{ agreement.end_date }}</td>
+                            <td>
+                                {% if agreement.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif agreement.status == 'expired' %}
+                                <span class="badge bg-danger">Expired</span>
+                                {% elif agreement.status == 'suspended' %}
+                                <span class="badge bg-warning">Suspended</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ agreement.status|title }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">                                {% if agreement.tender %}
+                                    <a href="{% url 'edit-framework-agreement' agreement.tender.id agreement.id %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                {% endif %}
+                                    <button type="button" class="btn btn-outline-danger"
+                                            onclick="confirmDelete({{ agreement.id }}, '{{ agreement.agreement_number }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <p class="mb-0 text-muted">No framework agreements found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Agreement Modal -->
+<div class="modal fade" id="addAgreementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Framework Agreement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.vendor.label_tag }}
+                            {{ form.vendor }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_tender">Tender</label>
+                            <select name="tender" id="id_tender" class="form-select" required>
+                                <option value="">-- Select Tender --</option>
+                                {% for tender in tenders %}
+                                <option value="{{ tender.id }}">{{ tender.tender_number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.agreement_number.label_tag }}
+                            {{ form.agreement_number }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.status.label_tag }}
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.start_date.label_tag }}
+                            {{ form.start_date }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.end_date.label_tag }}
+                            {{ form.end_date }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.terms_conditions.label_tag }}
+                            {{ form.terms_conditions }}
+                        </div>
+                    </div>
+                    <div class="mt-4 text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Agreement</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmDelete(agreementId, agreementNumber) {
+        if (confirm(`Are you sure you want to delete framework agreement "${agreementNumber}"?`)) {
+            // Send delete request
+            console.log(`Delete agreement ${agreementId}`);
+        }
+    }
+</script>
+{% endblock %}
