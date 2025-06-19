@@ -1,0 +1,33 @@
+/* Additional CSS to fix navbar display issues in production */
+
+/* Ensure dropdown text is visible */
+.navbar .dropdown-menu .dropdown-item {
+    color: #212529 !important;
+}
+
+.navbar .dropdown-menu .dropdown-item:hover,
+.navbar .dropdown-menu .dropdown-item:focus,
+.navbar .dropdown-menu .dropdown-item.active {
+    color: white !important;
+    background-color: var(--fda-blue, #2f3192) !important;
+}
+
+/* Fixed styling for navbar on all environments */
+.navbar-nav .dropdown-menu {
+    background-color: white;
+}
+
+/* Add visual feedback for dropdowns */
+.navbar .nav-item.dropdown:hover .dropdown-toggle,
+.navbar .nav-item.dropdown:focus .dropdown-toggle {
+    color: var(--fda-yellow, #ffdf00);
+}
+
+/* Ensure navbar toggler icon is visible on mobile */
+.navbar-toggler {
+    border-color: white;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}

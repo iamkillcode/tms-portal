@@ -13,6 +13,17 @@
 .text-fda-yellow { color: var(--fda-yellow) !important; }
 .text-fda-white { color: var(--fda-white) !important; }
 
+/* Ensure dropdown items have visible text */
+.dropdown-menu .dropdown-item {
+    color: var(--fda-text-dark) !important;
+}
+.dropdown-menu .dropdown-item:hover, 
+.dropdown-menu .dropdown-item:focus, 
+.dropdown-menu .dropdown-item.active {
+    color: var(--fda-white) !important;
+    background-color: var(--fda-blue) !important;
+}
+
 html, body {
     height: 100%;
     margin: 0;
@@ -24,6 +35,23 @@ body {
     flex-direction: column;
     background-color: #ffffff;
     color: #222;
+}
+
+/* Navbar styles */
+.navbar-nav .nav-link {
+    color: var(--fda-white);
+}
+
+.navbar-nav .nav-link.active, 
+.navbar-nav .nav-link:hover {
+    color: var(--fda-yellow);
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+    background-color: var(--fda-white);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* Base styles */
