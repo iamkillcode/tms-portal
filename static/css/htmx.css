@@ -1,0 +1,59 @@
+/* CSS for HTMX features */
+
+/* Indicate the element is being requested */
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+.htmx-request.htmx-indicator {
+    opacity: 1;
+}
+
+/* Styles for elements that are loading */
+.htmx-loading {
+    position: relative;
+}
+.htmx-loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 1;
+}
+
+/* Gentle fade transition */
+.fade-me-in.htmx-swapping {
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+}
+.fade-me-in {
+    opacity: 1;
+    transition: opacity 300ms ease-in;
+}
+
+/* Spin animation for loading indicators */
+.htmx-indicator .spinner-border {
+    display: inline-block;
+}
+
+/* Toast animations */
+.toast.htmx-added {
+    animation: fadeInRight 0.5s;
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

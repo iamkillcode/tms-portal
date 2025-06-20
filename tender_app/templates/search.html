@@ -7,13 +7,19 @@
     <!-- Search Form -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form method="GET" class="mb-0">
+            <form hx-get="{% url 'search' %}" 
+                  hx-trigger="submit, input[name='search'] changed delay:500ms" 
+                  hx-target="body" 
+                  hx-push-url="true" 
+                  hx-indicator="#search-indicator" 
+                  class="mb-0">
                 <div class="input-group">
                     <input type="text" name="search" class="form-control" 
                            placeholder="Search tenders and ISOs..." 
                            value="{{ search_query }}" autofocus>
                     <button class="btn btn-primary" type="submit">
                         <i class="bi bi-search"></i> Search
+                        <span id="search-indicator" class="htmx-indicator spinner-border spinner-border-sm ms-1" role="status"></span>
                     </button>
                 </div>
             </form>
@@ -26,25 +32,8 @@
         <div class="card-header">
             <h5 class="card-title mb-0">Tender Results</h5>
         </div>
-        <div class="card-body">
-            {% if tenders %}
-            <div class="list-group list-group-flush">
-                {% for tender in tenders %}
-                <a href="{% url 'tender-update' tender.id %}" class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">{{ tender.tender_number }}</h6>
-                        <small class="text-muted">{{ tender.created_at|date:"M d, Y" }}</small>
-                    </div>
-                    <p class="mb-1">{{ tender.description }}</p>
-                    <small class="text-muted">
-                        Department: {{ tender.department.name }} | Category: {{ tender.category }}
-                    </small>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-muted mb-0">No tenders found matching your search.</p>
-            {% endif %}
+        <div class="card-body" id="tender-results" hx-target="this" hx-swap="innerHTML">
+            {% include "htmx/search_tenders_results.html" %}
         </div>
     </div>
 
@@ -53,25 +42,8 @@
         <div class="card-header">
             <h5 class="card-title mb-0">ISO Results</h5>
         </div>
-        <div class="card-body">
-            {% if isos %}
-            <div class="list-group list-group-flush">
-                {% for iso in isos %}
-                <a href="{% url 'iso-detail' iso.id %}" class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">{{ iso.iso_number }}</h6>
-                        <small class="text-muted">{{ iso.date_created|date:"M d, Y" }}</small>
-                    </div>
-                    <p class="mb-1">{{ iso.description }}</p>
-                    <small class="text-muted">
-                        Division: {{ iso.division.name }} | Department: {{ iso.department.name }}
-                    </small>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-muted mb-0">No ISO numbers found matching your search.</p>
-            {% endif %}
+        <div class="card-body" id="iso-results" hx-target="this" hx-swap="innerHTML">
+            {% include "htmx/search_iso_results.html" %}
         </div>
     </div>
     {% else %}
@@ -81,4 +53,26 @@
     </div>
     {% endif %}
 </div>
+
+<!-- JavaScript for HTMX enhancements -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add loading indicator behavior
+        htmx.on('#tender-results', 'htmx:beforeRequest', function(event) {
+            event.detail.target.classList.add('htmx-loading');
+        });
+        
+        htmx.on('#tender-results', 'htmx:afterRequest', function(event) {
+            event.detail.target.classList.remove('htmx-loading');
+        });
+        
+        htmx.on('#iso-results', 'htmx:beforeRequest', function(event) {
+            event.detail.target.classList.add('htmx-loading');
+        });
+        
+        htmx.on('#iso-results', 'htmx:afterRequest', function(event) {
+            event.detail.target.classList.remove('htmx-loading');
+        });
+    });
+</script>
 {% endblock %}

@@ -1,0 +1,18 @@
+{% if isos %}
+<div class="list-group list-group-flush fade-me-in">
+    {% for iso in isos %}
+    <a href="{% url 'iso-detail' iso.id %}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ iso.iso_number }}</h6>
+            <small class="text-muted">{{ iso.date_created|date:"M d, Y" }}</small>
+        </div>
+        <p class="mb-1">{{ iso.description }}</p>
+        <small class="text-muted">
+            Division: {{ iso.division.name }} | Department: {{ iso.department.name }}
+        </small>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted mb-0 fade-me-in">No ISO numbers found matching your search.</p>
+{% endif %}

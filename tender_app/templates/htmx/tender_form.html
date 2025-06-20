@@ -1,0 +1,63 @@
+{% load widget_tweaks %}
+
+<form class="fade-me-in" hx-post="{{ request.path }}" hx-target="#form-container" hx-swap="outerHTML">
+    {% csrf_token %}
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label for="id_department_code" class="form-label">Department</label>
+            {{ form.department_code|add_class:"form-select" }}
+        </div>
+        <div class="col-md-4">
+            <label for="id_category_code" class="form-label">Category</label>
+            {{ form.category_code|add_class:"form-select" }}
+        </div>
+        <div class="col-md-4">
+            <label for="id_procurement_type" class="form-label">Procurement Type</label>
+            {{ form.procurement_type|add_class:"form-select" }}
+        </div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-12">
+            <label for="id_tender_description" class="form-label">Tender Description</label>
+            {{ form.tender_description|add_class:"form-control" }}
+        </div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label for="id_lot_number" class="form-label">Lot Number (Optional)</label>
+            {{ form.lot_number|add_class:"form-control" }}
+        </div>
+        <div class="col-md-4">
+            <label for="id_amendment_number" class="form-label">Amendment Number (Optional)</label>
+            {{ form.amendment_number|add_class:"form-control" }}
+        </div>
+        <div class="col-md-4">
+            <label for="id_call_off_number" class="form-label">Call-off Number (Optional)</label>
+            {{ form.call_off_number|add_class:"form-control" }}
+        </div>
+    </div>
+    <div class="d-flex justify-content-between">
+        <button type="submit" class="btn btn-primary">
+            <span class="htmx-indicator spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Generate Tender Number
+        </button>
+        <button type="reset" class="btn btn-outline-secondary">Reset</button>
+    </div>
+</form>
+
+{% if tender_number %}
+<div class="alert alert-success mt-4 fade-me-in" role="alert">
+    <h5>Successfully generated tender number:</h5>
+    <p class="fs-4 fw-bold">{{ tender_number }}</p>
+    {% if tender_description %}
+    <p><strong>Description:</strong> {{ tender_description }}</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-danger mt-4 fade-me-in" role="alert">
+    <h5>Error:</h5>
+    <p>{{ error }}</p>
+</div>
+{% endif %}

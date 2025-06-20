@@ -3,9 +3,10 @@ Tender-related views for the tender application.
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.http import JsonResponse, HttpResponse, HttpResponseNotAllowed
+from django.views.decorators.http import require_POST, require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.views.generic import DetailView
@@ -187,30 +188,36 @@ def tender_activity_view(request):
 @user_passes_test(has_user_role)
 def tender_list_view(request):
     """View to list all tenders."""
-    search_query = request.GET.get('search', '')
+    from ..htmx_utils import htmx_template
     
-    tenders = Tender.objects.all()
-    if search_query:
-        tenders = tenders.filter(
-            Q(tender_number__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(department__name__icontains=search_query)
-        )
+    @htmx_template('tender_list.html', 'htmx/tender_list_rows.html')
+    def _tender_list(request):
+        search_query = request.GET.get('search', '')
+        
+        tenders = Tender.objects.all()
+        if search_query:
+            tenders = tenders.filter(
+                Q(tender_number__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(department__name__icontains=search_query)
+            )
+        
+        tenders = tenders.order_by('-created_at')
+        
+        # Get all vendors for the dropdown
+        vendors = Vendor.objects.all().order_by('name')
+        
+        paginator = Paginator(tenders, 10)
+        page = request.GET.get('page')
+        tenders_page = paginator.get_page(page)
+        
+        return {
+            'tenders': tenders_page,
+            'vendors': vendors,
+            'search_query': search_query
+        }
     
-    tenders = tenders.order_by('-created_at')
-    
-    # Get all vendors for the dropdown
-    vendors = Vendor.objects.all().order_by('name')
-    
-    paginator = Paginator(tenders, 10)
-    page = request.GET.get('page')
-    tenders = paginator.get_page(page)
-    
-    return render(request, 'tender_list.html', {
-        'tenders': tenders,
-        'vendors': vendors,
-        'search_query': search_query
-    })
+    return _tender_list(request)
 
 
 @login_required
@@ -370,54 +377,112 @@ def export_tenders_view(request):
 @user_passes_test(has_user_role)
 def tender_items_view(request, tender_id):
     """View to list and manage items for a specific tender."""
+    from ..htmx_utils import htmx_template, is_htmx_request
+    
     tender = get_object_or_404(Tender, id=tender_id)
     items = tender.items.all().prefetch_related('vendorbid_set', 'vendorbid_set__vendor')
     
-    if request.method == 'POST':
-        form = TenderItemForm(request.POST)
-        if form.is_valid():
-            item = form.save(commit=False)
-            item.tender = tender
-            item.save()
-            messages.success(request, 'Item added successfully!')
-            return redirect('tender-items', tender_id=tender_id)
-    else:
-        form = TenderItemForm()
-    
-    return render(request, 'tender_items.html', {
-        'tender': tender,
-        'items': items,
-        'form': form
-    })
+    @htmx_template('tender_items.html', 'htmx/tender_items_form.html')
+    def process_form(request):
+        if request.method == 'POST':
+            form = TenderItemForm(request.POST)
+            if form.is_valid():
+                item = form.save(commit=False)
+                item.tender = tender
+                item.save()
+                messages.success(request, 'Item added successfully!')
+                
+                # If HTMX request, return the updated list
+                if is_htmx_request(request):
+                    response = render(request, 'htmx/tender_items_list.html', {
+                        'tender': tender, 
+                        'items': items
+                    })
+                    response['HX-Trigger'] = '{"itemAdded": true}'
+                    return response
+                    
+                return redirect('tender-items', tender_id=tender_id)
+        else:
+            form = TenderItemForm()
+            return {
+                'tender': tender,
+                'items': items,
+                'form': form
+            }
+                
+    return process_form(request)
 
 
 @login_required
 @user_passes_test(has_user_role)
-def edit_tender_item_view(request, tender_id, item_id):
-    """View to edit a tender item."""
+def tender_item_edit_view(request, tender_id, item_id):
+    """View to edit a tender item with HTMX support."""
+    from ..htmx_utils import is_htmx_request
+    
     tender = get_object_or_404(Tender, id=tender_id)
     item = get_object_or_404(TenderItem, id=item_id, tender=tender)
     
-    if request.method == 'POST':
-        form = TenderItemForm(request.POST, instance=item)
+    if request.method == 'GET':
+        form = TenderItemForm(instance=item)
+        return render(request, 'htmx/tender_items_edit.html', {
+            'tender': tender,
+            'item': item,
+            'form': form
+        })
+    
+    elif request.method == 'PUT':
+        # Use request.PUT which is set by our middleware
+        form = TenderItemForm(request.PUT, instance=item)
         if form.is_valid():
             form.save()
             messages.success(request, 'Item updated successfully!')
+            
+            # Return the updated row for HTMX swap
+            items = [item]  # Just this one item for the response
+            return render(request, 'htmx/tender_items_list.html', {
+                'tender': tender,
+                'items': items
+            })
+        else:
+            # Form has errors
+            return render(request, 'htmx/tender_items_edit.html', {
+                'tender': tender,
+                'item': item,
+                'form': form
+            })
     
-    return redirect('tender-items', tender_id=tender_id)
+    # Fall back for unsupported methods
+    return HttpResponseNotAllowed(['GET', 'PUT'])
 
 
+@login_required
+@user_passes_test(has_user_role)
+def tender_item_delete_view(request, tender_id, item_id):
+    """View to delete a tender item with HTMX support."""
+    tender = get_object_or_404(Tender, id=tender_id)
+    item = get_object_or_404(TenderItem, id=item_id, tender=tender)
+    
+    if request.method == 'DELETE':
+        item.delete()
+        messages.success(request, 'Item deleted successfully!')
+        
+        # Return an empty response for HTMX to remove the element
+        return HttpResponse(status=200)
+    
+    return HttpResponseNotAllowed(['DELETE'])
+    
 class TenderDetailView(DetailView):
     """Detail view for a tender."""
     model = Tender
     template_name = 'tender_app/tender_detail.html'
     context_object_name = 'tender'
-
-
+    
 @login_required
 @user_passes_test(has_user_role)
 def search_view(request):
-    """View to search across tenders and ISOs."""
+    """View to search across tenders and ISOs with HTMX support."""
+    from ..htmx_utils import is_htmx_request
+    
     search_query = request.GET.get('search', '')
     
     tenders = []
@@ -440,6 +505,19 @@ def search_view(request):
             Q(department__name__icontains=search_query)
         ).order_by('-date_created')
     
+    # Check if it's an HTMX request and which target is specified
+    if is_htmx_request(request):
+        target = request.headers.get('HX-Target')
+        
+        if target == 'tender-results':
+            return render(request, 'htmx/search_tenders_results.html', {
+                'tenders': tenders,
+            })
+        elif target == 'iso-results':
+            return render(request, 'htmx/search_iso_results.html', {
+                'isos': isos,
+            })
+      # Regular request, render the full template
     return render(request, 'search.html', {
         'search_query': search_query,
         'tenders': tenders,

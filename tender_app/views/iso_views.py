@@ -89,23 +89,28 @@ def iso_detail_view(request, iso_id):
 @login_required
 @user_passes_test(has_user_role)
 def iso_list_view(request):
-    """View to list all ISO numbers."""
-    isos = ISONumber.objects.all().order_by('-date_created')
-    search_query = request.GET.get('search', '')
+    """View to list all ISO numbers with HTMX support."""
+    from ..htmx_utils import htmx_template
     
-    if search_query:
-        isos = isos.filter(
-            Q(iso_number__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(division__name__icontains=search_query) |
-            Q(department__name__icontains=search_query)
-        )
+    @htmx_template('iso_list.html', 'htmx/iso_list_rows.html')
+    def _iso_list(request):
+        isos = ISONumber.objects.all().order_by('-date_created')
+        search_query = request.GET.get('search', '')
+        
+        if search_query:
+            isos = isos.filter(
+                Q(iso_number__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(division__name__icontains=search_query) |
+                Q(department__name__icontains=search_query)
+            )
+        
+        paginator = Paginator(isos, 10)
+        page = request.GET.get('page')
+        isos_page = paginator.get_page(page)
+        return {
+            'isos': isos_page,
+            'search_query': search_query
+        }
     
-    paginator = Paginator(isos, 10)
-    page = request.GET.get('page')
-    isos = paginator.get_page(page)
-    
-    return render(request, 'iso_list.html', {
-        'isos': isos,
-        'search_query': search_query
-    })
+    return _iso_list(request)

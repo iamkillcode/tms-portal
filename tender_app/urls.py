@@ -41,7 +41,8 @@ urlpatterns = [
         path('<int:tender_id>/update/', tender_views.tender_update_view, name='tender-update'),        path('export/', tender_views.export_tenders_view, name='export-tenders'),
         # Tender Items URLs
         path('<int:tender_id>/items/', tender_views.tender_items_view, name='tender-items'),
-        path('<int:tender_id>/items/<int:item_id>/edit/', tender_views.edit_tender_item_view, name='edit-tender-item'),
+        path('<int:tender_id>/items/<int:item_id>/edit/', tender_views.tender_item_edit_view, name='tender-item-edit'),
+        path('<int:tender_id>/items/<int:item_id>/delete/', tender_views.tender_item_delete_view, name='tender-item-delete'),
         # Vendor Bids URLs
         path('<int:tender_id>/items/<int:item_id>/bids/', vendor_views.vendor_bids_view, name='vendor-bids'),        path('<int:tender_id>/items/<int:item_id>/bids/<int:bid_id>/edit/', 
              vendor_views.edit_vendor_bid_view, name='edit-vendor-bid'),

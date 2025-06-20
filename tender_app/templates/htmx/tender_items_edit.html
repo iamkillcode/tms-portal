@@ -1,0 +1,91 @@
+{% load widget_tweaks %}
+
+<div class="modal-dialog">
+    <div class="modal-content fade-me-in">
+        <div class="modal-header">
+            <h5 class="modal-title">Edit Item</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form hx-put="{% url 'tender-item-edit' tender.id item.id %}" hx-target="closest tr" hx-swap="outerHTML">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="item_name" class="form-label">Item Name</label>
+                            {{ form.item_name|add_class:"form-control" }}
+                            {% if form.item_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.item_name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            {{ form.description|add_class:"form-control" }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            {{ form.quantity|add_class:"form-control" }}
+                            {% if form.quantity.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.quantity.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="unit_of_measure" class="form-label">Unit of Measure</label>
+                            {{ form.unit_of_measure|add_class:"form-control" }}
+                            {% if form.unit_of_measure.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.unit_of_measure.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="brand" class="form-label">Brand</label>
+                            {{ form.brand|add_class:"form-control" }}
+                            {% if form.brand.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.brand.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="manufacturer" class="form-label">Manufacturer</label>
+                            {{ form.manufacturer|add_class:"form-control" }}
+                            {% if form.manufacturer.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.manufacturer.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="specifications" class="form-label">Specifications</label>
+                            {{ form.specifications|add_class:"form-control" }}
+                            {% if form.specifications.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.specifications.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="htmx-indicator spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,34 @@
+/* Add fallback styles for when JavaScript/HTMX is disabled */
+
+/* Make sure all forms still work and look correct without HTMX */
+.no-js .htmx-indicator {
+    display: none !important;
+}
+
+/* Hide HTMX-specific indicators when JS is disabled */
+.no-js [hx-boost], 
+.no-js [hx-get], 
+.no-js [hx-post], 
+.no-js [hx-put], 
+.no-js [hx-delete] {
+    /* Reset to standard link/button behavior */
+    cursor: pointer;
+}
+
+/* Ensure forms still submit properly without HTMX */
+.no-js form[hx-get], 
+.no-js form[hx-post], 
+.no-js form[hx-put], 
+.no-js form[hx-delete] {
+    /* Default form behavior */
+    display: block;
+}
+
+/* Show fallback buttons when JS is disabled */
+.js-fallback {
+    display: none;
+}
+
+.no-js .js-fallback {
+    display: initial;
+}

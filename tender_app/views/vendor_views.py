@@ -17,27 +17,33 @@ from .tender_views import has_user_role
 @user_passes_test(has_user_role)
 def vendor_list_view(request):
     """Display a list of all vendors."""
-    vendors = Vendor.objects.all().order_by('name')
+    from ..htmx_utils import htmx_template
     
-    # Search functionality
-    search_query = request.GET.get('search', '')
-    if search_query:
-        vendors = vendors.filter(
-            Q(name__icontains=search_query) |
-            Q(contact_person__icontains=search_query) |
-            Q(email__icontains=search_query)
-        )
+    @htmx_template('vendor_list.html', 'htmx/vendor_list_rows.html')
+    def _vendor_list(request):
+        vendors = Vendor.objects.all().order_by('name')
+        
+        # Search functionality
+        search_query = request.GET.get('search', '')
+        if search_query:
+            vendors = vendors.filter(
+                Q(name__icontains=search_query) |
+                Q(contact_person__icontains=search_query) |
+                Q(email__icontains=search_query)
+            )
+        
+        # Pagination
+        paginator = Paginator(vendors, 10)  # Show 10 vendors per page
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        return {
+            'page_obj': page_obj,
+            'search_query': search_query,
+            'total_vendors': vendors.count(),
+        }
     
-    # Pagination
-    paginator = Paginator(vendors, 10)  # Show 10 vendors per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'vendor_list.html', {
-        'page_obj': page_obj,
-        'search_query': search_query,
-        'total_vendors': vendors.count(),
-    })
+    return _vendor_list(request)
 
 
 @login_required

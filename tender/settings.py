@@ -59,6 +59,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'tender_app.htmx_middleware.HtmxMiddleware',  # HTMX middleware
+    'tender_app.http_method_middleware.HttpMethodOverrideMiddleware',  # HTTP method override middleware
     'audit_trail.middleware.AuditTrailMiddleware',  # Add this for audit logging
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise
 ]

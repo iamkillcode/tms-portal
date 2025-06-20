@@ -1,0 +1,190 @@
+{% if tenders %}
+    {% for tender in tenders %}
+    <tr class="fade-me-in">
+        <td>{{ tender.tender_number }}</td>
+        <td>{{ tender.description }}</td>
+        <td>{{ tender.department.name }}</td>
+        <td>
+            {% if tender.status %}
+                <span class="badge {% if tender.status == 'Completed' %}bg-success{% else %}bg-primary{% endif %}">
+                    {{ tender.status }}
+                </span>
+            {% else %}
+                <span class="badge bg-secondary">Not Set</span>
+            {% endif %}
+        </td>
+        <td>{{ tender.user.profile.full_name }}</td>
+        <td>{{ tender.created_at|date:"Y-m-d H:i" }}</td>
+        <td>
+            <div class="btn-group">
+                <button type="button" 
+                        class="btn btn-primary btn-sm" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#updateModal{{ tender.id }}">
+                    <i class="bi bi-pencil-square"></i> Update
+                </button>
+                <a href="{% url 'tender-items' tender.id %}" 
+                   class="btn btn-info btn-sm">
+                    <i class="bi bi-list-check"></i> Items
+                </a>
+                <a href="{% url 'framework-agreements' tender.id %}" 
+                   class="btn btn-success btn-sm">
+                    <i class="bi bi-file-earmark-text"></i> Agreements
+                </a>
+            </div>
+        </td>
+    </tr>
+    
+    <!-- Modal for each tender -->
+    <div class="modal fade" id="updateModal{{ tender.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Tender: {{ tender.tender_number }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% url 'tender-update' tender.id %}" class="row g-3">
+                        {% csrf_token %}
+                        
+                        <!-- Existing Details -->
+                        <div class="col-md-6">
+                            <label class="form-label">Tender Number</label>
+                            <input type="text" class="form-control" value="{{ tender.tender_number }}" readonly>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Officer</label>
+                            <input type="text" class="form-control" value="{{ tender.user.profile.full_name }}" readonly>
+                        </div>
+
+                        <!-- Category and Status -->
+                        <div class="col-md-6">
+                            <label class="form-label">Category</label>
+                            <select name="category" class="form-select" required>
+                                <option value="Goods" {% if tender.category == 'Goods' %}selected{% endif %}>Goods</option>
+                                <option value="Technical Service" {% if tender.category == 'Technical Service' %}selected{% endif %}>Technical Service</option>
+                                <option value="Consultancy" {% if tender.category == 'Consultancy' %}selected{% endif %}>Consultancy</option>
+                                <option value="Works" {% if tender.category == 'Works' %}selected{% endif %}>Works</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select" required>
+                                <option value="In Progress" {% if tender.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Completed" {% if tender.status == 'Completed' %}selected{% endif %}>Completed</option>
+                            </select>
+                        </div>
+
+                        <!-- Process Dates -->
+                        <div class="col-md-3">
+                            <label class="form-label">Invitation Date</label>
+                            <input type="date" name="invitation_date" class="form-control" value="{{ tender.invitation_date|date:'Y-m-d' }}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Closing Date</label>
+                            <input type="date" name="closing_date" class="form-control" value="{{ tender.closing_date|date:'Y-m-d' }}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Evaluation Date</label>
+                            <input type="date" name="evaluation_date" class="form-control" value="{{ tender.evaluation_date|date:'Y-m-d' }}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Contract Date</label>
+                            <input type="date" name="contract_date" class="form-control" value="{{ tender.contract_date|date:'Y-m-d' }}">
+                        </div>
+
+                        <!-- Contract Details -->
+                        <div class="col-md-4">
+                            <label class="form-label">Currency</label>
+                            <select name="currency" class="form-select">
+                                <option value="GHS" {% if tender.currency == 'GHS' %}selected{% endif %}>GHS</option>
+                                <option value="USD" {% if tender.currency == 'USD' %}selected{% endif %}>USD</option>
+                                <option value="EUR" {% if tender.currency == 'EUR' %}selected{% endif %}>EUR</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Contract Amount</label>
+                            <input type="number" name="contract_amount" class="form-control" value="{{ tender.contract_amount }}" step="0.01">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Amount to be Paid</label>
+                            <input type="number" name="payment_amount" class="form-control" value="{{ tender.payment_amount }}" step="0.01">
+                        </div>                                           
+                        <!-- Vendor Details -->
+                        <div class="col-md-12">
+                            <label class="form-label">Vendor/Consultant Name</label>
+                            <select name="vendor" class="form-select">
+                                <option value="">-- Select Vendor --</option>
+                                {% for vendor in vendors %}
+                                    <option value="{{ vendor.id }}" {% if tender.vendor_id == vendor.id %}selected{% endif %}>{{ vendor.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <!-- Keep old field for backward compatibility -->
+                            <input type="hidden" name="vendor_name" value="{{ tender.vendor.name|default:tender.vendor_name }}">
+                        </div>
+
+                        <!-- PO Details -->
+                        <div class="col-md-6">
+                            <label class="form-label">PO Number</label>
+                            <input type="text" name="po_number" class="form-control" value="{{ tender.po_number }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">PO Date</label>
+                            <input type="date" name="po_date" class="form-control" value="{{ tender.po_date|date:'Y-m-d' }}">
+                        </div>
+
+                        <!-- SRA Details -->
+                        <div class="col-md-6">
+                            <label class="form-label">SRA/Certification Number</label>
+                            <input type="text" name="sra_number" class="form-control" value="{{ tender.sra_number }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">SRA/Certification Date</label>
+                            <input type="date" name="sra_date" class="form-control" value="{{ tender.sra_date|date:'Y-m-d' }}">
+                        </div>
+
+                        <!-- Payment Details -->
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Memo Date</label>
+                            <input type="date" name="payment_memo_date" class="form-control" value="{{ tender.payment_memo_date|date:'Y-m-d' }}">
+                        </div>
+
+                        <!-- File Details -->
+                        <div class="col-md-6">
+                            <label class="form-label">File Name</label>
+                            <input type="text" name="file_name" class="form-control" value="{{ tender.file_name }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">File Number</label>
+                            <input type="text" name="file_number" class="form-control" value="{{ tender.file_number }}">
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="col-12 text-end mt-4">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <tr>
+        <td colspan="7" class="text-center py-4">
+            <i class="bi bi-inbox text-muted"></i>
+            No tenders found.
+        </td>
+    </tr>
+{% endif %}

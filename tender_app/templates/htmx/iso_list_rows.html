@@ -1,0 +1,20 @@
+{% for iso in isos %}
+<tr class="fade-me-in">
+    <td>{{ iso.iso_number }}</td>
+    <td>{{ iso.description }}</td>
+    <td>{{ iso.division.name }}</td>
+    <td>{{ iso.department.name }}</td>
+    <td>{{ iso.letter_type }}</td>
+    <td>{{ iso.officer.get_full_name }}</td>
+    <td>{{ iso.date_created|date:"Y-m-d" }}</td>
+    <td>
+        <a href="{% url 'iso-detail' iso.id %}" class="btn btn-sm btn-info">
+            <i class="bi bi-eye"></i> View
+        </a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="8" class="text-center">No ISO numbers found.</td>
+</tr>
+{% endfor %}

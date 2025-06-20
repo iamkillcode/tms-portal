@@ -1,0 +1,18 @@
+{% if tenders %}
+<div class="list-group list-group-flush fade-me-in">
+    {% for tender in tenders %}
+    <a href="{% url 'tender-update' tender.id %}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ tender.tender_number }}</h6>
+            <small class="text-muted">{{ tender.created_at|date:"M d, Y" }}</small>
+        </div>
+        <p class="mb-1">{{ tender.description }}</p>
+        <small class="text-muted">
+            Department: {{ tender.department.name }} | Category: {{ tender.category }}
+        </small>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted mb-0 fade-me-in">No tenders found matching your search.</p>
+{% endif %}
