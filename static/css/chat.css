@@ -1,0 +1,76 @@
+/* 
+ * Chat system styles
+ */
+
+/* Message containers */
+.chat-container {
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    scroll-behavior: smooth;
+}
+
+/* Message styling */
+.message {
+    margin-bottom: 1rem;
+    max-width: 75%;
+    position: relative;
+    animation: messageAppear 0.3s ease-in-out;
+}
+
+@keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message.outgoing {
+    margin-left: auto;
+    background-color: #e3f2fd;
+}
+
+.message.incoming {
+    margin-right: auto;
+    background-color: #f8f9fa;
+}
+
+/* Message send form */
+.message-form {
+    padding: 1rem;
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+/* Sending status */
+.message .sending-indicator {
+    font-style: italic;
+    color: #6c757d;
+}
+
+/* Unread messages indicator */
+.unread-badge {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.unread-badge:hover {
+    transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .message {
+        max-width: 85%;
+    }
+}

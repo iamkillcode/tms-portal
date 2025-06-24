@@ -63,6 +63,7 @@ MIDDLEWARE = [
     'tender_app.http_method_middleware.HttpMethodOverrideMiddleware',  # HTTP method override middleware
     'audit_trail.middleware.AuditTrailMiddleware',  # Add this for audit logging
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise
+    'tender.debug_middleware.HtmxDebugMiddleware',  # HTMX debug middleware
 ]
 
 ROOT_URLCONF = 'tender.urls'
@@ -83,13 +84,13 @@ TEMPLATES = [
             os.path.join(BASE_DIR, 'tender_app', 'templates'),
         ],
         'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
+        'OPTIONS': {            'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.static',
+                'tender_app.context_processors.unread_messages',
             ],
         },
     },

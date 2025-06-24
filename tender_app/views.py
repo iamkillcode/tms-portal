@@ -16,6 +16,7 @@ from .views.task_views import *
 from .views.chemical_views import *
 from .views.order_views import *
 from .views.report_views import *
+from .views.chat_views import *
 
 # Re-export common helper functions
 from .views.tender_views import has_admin_role, has_user_role
@@ -42,7 +43,8 @@ from .models import (
     TenderTracker, Department, Category, Tender, TenderItem,
     VendorBid, FrameworkAgreement, Vendor, ISONumber, ISOTracker,
     Division, UserProfile, BreakfastItem, Order, OrderItem,
-    Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment
+    Chemical, ChemicalSpecification, Task, TaskCategory, TaskComment,
+    ChatRoom, ChatMessage, ChatParticipant
 )
 
 from .forms import (

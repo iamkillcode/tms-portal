@@ -13,7 +13,8 @@ from .views import (
     task_views,
     chemical_views,
     order_views,
-    report_views
+    report_views,
+    chat_views
 )
 
 def registration_disabled(request):
@@ -70,7 +71,8 @@ urlpatterns = [
         path('create/', chemical_views.chemical_create, name='chemical_create'),
         path('import/', chemical_views.chemical_import, name='chemical_import'),
         path('<int:pk>/', chemical_views.chemical_detail, name='chemical_detail'),
-        path('<int:pk>/update/', chemical_views.chemical_update, name='chemical_update'),        path('spec/<int:pk>/delete/', chemical_views.chemical_spec_delete, name='chemical_spec_delete'),
+        path('<int:pk>/update/', chemical_views.chemical_update, name='chemical_update'),
+        path('spec/<int:pk>/delete/', chemical_views.chemical_spec_delete, name='chemical_spec_delete'),
     ])),
     # Task Management URLs
     path('tasks/', include([
@@ -86,4 +88,13 @@ urlpatterns = [
     # User Profile URLs
     path('profile/', app_auth_views.profile_view, name='profile'),
     path('profile/update/', app_auth_views.profile_update_view, name='profile-update'),
+    # Chat URLs
+    path('chat/', include([
+        path('', chat_views.chat_home, name='chat_home'),
+        path('room/<int:room_id>/', chat_views.chat_room, name='chat_room'),
+        path('room/<int:room_id>/messages/', chat_views.load_messages, name='load_messages'),
+        path('room/<int:room_id>/send/', chat_views.send_message, name='send_message'),
+        path('create/', chat_views.create_chat, name='create_chat'),
+        path('create/<int:user_id>/', chat_views.create_chat, name='create_direct_chat'),
+    ])),
 ]

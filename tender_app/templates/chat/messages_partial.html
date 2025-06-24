@@ -1,0 +1,16 @@
+<!-- filepath: c:\Users\USER\Desktop\Dev\tender\tender_app\templates\chat\messages_partial.html -->
+{% for message in messages %}
+    <div class="card message {% if message.sender == request.user %}outgoing{% else %}incoming{% endif %} mb-3" id="message-{{ message.id }}">
+        <div class="card-header py-1 px-3 d-flex justify-content-between align-items-center {% if message.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
+            <small>{{ message.sender.get_full_name|default:message.sender.username }}</small>
+            <small>{{ message.timestamp|date:"g:i A" }}</small>
+        </div>
+        <div class="card-body py-2">
+            {{ message.content|linebreaks }}
+        </div>
+    </div>
+{% empty %}
+    <div class="text-center py-5 text-muted">
+        <p>No messages yet. Start the conversation!</p>
+    </div>
+{% endfor %}

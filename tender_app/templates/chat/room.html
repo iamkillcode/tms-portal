@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ room.name }} | Chat | TMS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Conversations</h5>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newChatModal">
+                        <i class="bi bi-plus-lg"></i> New
+                    </button>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for r in rooms %}
+                        <a href="{% url 'chat_room' r.id %}" 
+                           class="list-group-item list-group-item-action {% if r.id == room.id %}active{% endif %} {% if r.unread_count > 0 %}fw-bold{% endif %}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ r.name }}</h6>
+                                <small{% if r.id == room.id %} class="text-white"{% endif %}>
+                                    {% if r.latest_timestamp %}
+                                        {{ r.latest_timestamp|timesince }} ago
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <p class="mb-1 text-truncate">
+                                {% if r.latest_message %}
+                                    {{ r.latest_message }}
+                                {% else %}
+                                    <em>No messages yet</em>
+                                {% endif %}
+                            </p>
+                            {% if r.unread_count > 0 %}
+                                <span class="badge bg-danger rounded-pill unread-badge">{{ r.unread_count }}</span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ custom_room_name }}</h5>
+                </div><div class="chat-container">                    <div class="messages-container" id="messages-container"
+                         hx-get="{% url 'load_messages' room.id %}" 
+                         hx-trigger="load, every 10s, messageRefresh from:body"
+                         hx-target="#messages-container"
+                         hx-swap="innerHTML">
+                        {% include 'chat/messages_partial.html' %}
+                    </div>
+                    
+                    <div class="message-form">
+                        <form id="message-form" 
+                              hx-post="{% url 'send_message' room.id %}" 
+                              hx-swap="none" 
+                              hx-trigger="submit"
+                              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                              hx-indicator="#message-indicator">
+                            {% csrf_token %}                            <div class="input-group">
+                                <input type="text" name="content" id="message-input" class="form-control" placeholder="Type a message..." required
+                                       autocomplete="off" autofocus>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="bi bi-send"></i>
+                                    <span id="message-indicator" class="htmx-indicator spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const messagesContainer = document.getElementById('messages-container');
+        const messageInput = document.getElementById('message-input');
+        
+        // Log HTMX events for debugging
+        document.body.addEventListener('htmx:beforeSend', function(evt) {
+            console.log('htmx:beforeSend', evt.detail);
+        });
+        
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            console.log('htmx:afterSwap', evt.detail);
+            scrollChatToBottom();
+            
+            // Focus the input field again after a message is sent
+            if (messageInput) {
+                messageInput.focus();
+            }
+        });
+        
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            console.error('htmx:responseError', evt.detail);
+        });
+        
+        // Create a visual feedback when a message is sent
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            if (evt.detail.elt.id === 'message-form') {
+                const messageValue = messageInput.value.trim();
+                if (messageValue) {
+                    console.log('Sending message:', messageValue);
+                    // Add temporary indicator that message is sending
+                    const tempMessageId = 'temp-message-' + Date.now();
+                    const tempMessage = `
+                        <div class="card message outgoing mb-3" id="${tempMessageId}">
+                            <div class="card-header py-1 px-3 d-flex justify-content-between align-items-center bg-primary text-white">
+                                <small>{{ request.user.get_full_name|default:request.user.username }}</small>
+                                <small class="sending-indicator">Sending...</small>
+                            </div>
+                            <div class="card-body py-2">
+                                ${messageValue.replace(/\n/g, '<br>')}
+                            </div>
+                        </div>
+                    `;
+                    // Append temporary message to container
+                    messagesContainer.insertAdjacentHTML('beforeend', tempMessage);
+                    scrollChatToBottom();
+                }
+            }
+        });
+          // When we get confirmation that a message was added
+        document.body.addEventListener('messageAdded', function(evt) {
+            console.log('Message successfully added', evt.detail);
+            // Clear any temporary messages
+            const tempMessages = document.querySelectorAll('[id^="temp-message-"]');
+            tempMessages.forEach(el => el.remove());
+            
+            // Reset the form and focus on input
+            document.getElementById('message-form').reset();
+            if (messageInput) {
+                messageInput.focus();
+            }
+            
+            // Trigger a refresh of the messages container
+            document.body.dispatchEvent(new CustomEvent('messageRefresh'));
+            
+            // Scroll to the bottom to show the new message
+            setTimeout(() => {
+                scrollChatToBottom();
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}
